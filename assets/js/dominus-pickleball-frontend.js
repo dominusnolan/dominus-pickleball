@@ -165,30 +165,17 @@
             
             updateSummaryView();
         });
-
-        const modal = $('#dp-login-modal');
-        const closeModal = $('.dp-modal-close');
-
-        closeModal.on('click', function() {
-            modal.hide();
-        });
-
-        $(window).on('click', function(event) {
-            if ($(event.target).is(modal)) {
-                modal.hide();
-            }
-        });
         
         $('#dp-booking-form').on('submit', function(e) {
- 
+            // Client-side login check removed for reliability.
+            // The server-side check in DP_WooCommerce->handle_add_slots_to_cart_form() will handle non-logged-in users.
 
             const btn = $('#dp-add-to-cart-btn');
             btn.prop('disabled', true).text('Processing...');
 
             const hiddenSlotsContainer = $('#dp-hidden-slots-container');
-            hiddenSlotsContainer.empty(); // Clear previous hidden inputs
+            hiddenSlotsContainer.empty();
 
-            // Create a hidden input for each selected slot
             state.selectedSlots.forEach((slot, index) => {
                 Object.keys(slot).forEach(key => {
                     const input = `<input type="hidden" name="slots[${index}][${key}]" value="${slot[key]}">`;
@@ -196,14 +183,7 @@
                 });
             });
 
-            // The form will now submit naturally
-        });
-
-        $(document.body).on('login_success registration_successful', function() {
-            // After successful login, hide modal and submit the form
-            dp_ajax.is_user_logged_in = true;
-            modal.hide();
-            $('#dp-booking-form').submit(); // Trigger form submission
+            // The form will now submit naturally.
         });
 
         // Initial load

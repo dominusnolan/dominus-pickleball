@@ -166,15 +166,22 @@
     color: #333;
 }
 
-/* Disabled past days: make them visibly disabled */
+/* Disabled past days: make them visibly disabled and un-clickable */
 #dominus-pickleball-app .flatpickr-day.flatpickr-disabled,
-#dominus-pickleball-app .flatpickr-day.disabled {
+#dominus-pickleball-app .flatpickr-day.disabled,
+#dominus-pickleball-app .flatpickr-day[aria-disabled="true"] {
     opacity: 0.4;
-    cursor: not-allowed;
+    cursor: not-allowed !important;
     color: #bbb !important;
     background: transparent !important;
     border-color: #e0e0e0 !important;
 }
+#dominus-pickleball-app .flatpickr-day.flatpickr-disabled:hover,
+#dominus-pickleball-app .flatpickr-day.disabled:hover,
+#dominus-pickleball-app .flatpickr-day[aria-disabled="true"]:hover {
+    background: transparent !important;
+}
+
 
 /* Hide border for days not in the current month */
 #dominus-pickleball-app .flatpickr-day.prevMonthDay,
@@ -190,13 +197,16 @@
 }
 
 /* Hover effect for valid days */
-#dominus-pickleball-app .flatpickr-day:hover {
+#dominus-pickleball-app .flatpickr-day:not(.flatpickr-disabled):not(.disabled):not([aria-disabled="true"]):hover {
     background: #e9f5ff;
 }
 
 /* Style for today's date */
 #dominus-pickleball-app .flatpickr-day.today {
     border-color: var(--dp-accent-color);
+}
+#dominus-pickleball-app .flatpickr-day.today:not(.selected) {
+    color: var(--dp-accent-color);
 }
 
 /* Style for the selected date */
