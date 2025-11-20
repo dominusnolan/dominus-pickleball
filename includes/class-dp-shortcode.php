@@ -24,6 +24,16 @@ class DP_Shortcode {
      * @return string The booking form HTML.
      */
     public function render_booking_form( $atts ) {
+        // Enqueue scripts and styles only when the shortcode is actually being rendered.
+        wp_enqueue_style('dominus-pickleball-frontend');
+        wp_enqueue_script('dominus-pickleball-frontend');
+
+        // Enqueue WooCommerce scripts if needed for the login form.
+        if ( class_exists( 'WooCommerce' ) && ! is_user_logged_in() ) {
+            wp_enqueue_script( 'wc-password-strength-meter' );
+            wp_enqueue_script( 'wc-checkout' );
+        }
+
         // Start output buffering to capture the template output
         ob_start();
 

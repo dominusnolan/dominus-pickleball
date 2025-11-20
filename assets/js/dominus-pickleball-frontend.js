@@ -15,14 +15,14 @@
             dateFormat: "Y-m-d",
             defaultDate: dp_ajax.today,
             minDate: dp_ajax.today, // Keep minDate for navigation boundaries
-            // Add a disable function for robustly disabling past dates
             disable: [
                 function(date) {
-                    // Disable all dates before the server-provided 'today'
-                    // The 'YYYY-MM-DD' format ensures a correct string comparison.
-                    const todayStr = dp_ajax.today; 
-                    const dateStr = date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2);
-                    return dateStr < todayStr;
+                    // Create a date object for today at midnight for accurate comparison.
+                    // The replace() call is to prevent issues with Safari parsing 'YYYY-MM-DD'.
+                    const today = new Date(dp_ajax.today.replace(/-/g, '/') + ' 00:00:00');
+                    // Set the time of the iterated date to midnight to compare only the date part.
+                    date.setHours(0, 0, 0, 0);
+                    return date < today;
                 }
             ],
             onChange: function(selectedDates, dateStr, instance) {
@@ -123,7 +123,7 @@
             Object.values(groupedSlots).forEach(group => {
                 const price = group.slots.length * state.pricePerSlot;
                 total += price;
-                const formattedDate = new Date(group.date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+                const formattedDate = new Date(group.date.replace(/-/g, '/') + ' 00:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
 
                 const itemHtml = `
                     <div class="dp-summary-item">
