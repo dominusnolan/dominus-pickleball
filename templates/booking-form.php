@@ -40,27 +40,27 @@ if ( ! defined( 'WPINC' ) ) {
         <div class="dp-right-panel">
             <div class="dp-booking-header">
                 <h3>Select slots for <span id="dp-selected-date"></span></h3>
-                <div class="dp-legend">
-                    <span class="dp-legend-item dp-booked"></span> Booked
-                    <span class="dp-legend-item dp-selected"></span> Selected
-                    <span class="dp-legend-item dp-unavailable"></span> Unavailable
-                </div>
             </div>
             <div id="dp-time-slot-grid" class="dp-time-slot-grid">
                 <div class="dp-loader">Loading...</div>
             </div>
+            <!-- LEGEND MOVED HERE -->
+            <div class="dp-legend">
+                <span class="dp-legend-item dp-booked"></span> Booked
+                <span class="dp-legend-item dp-selected"></span> Selected
+                <span class="dp-legend-item dp-unavailable"></span> Unavailable
+            </div>
+            <!-- TEXT MOVED HERE -->
             <div class="dp-content" style="margin-top:20px">
                 <h3>Cancellation policy</h3>
                 <h4>NO RESCHEDULING, NO REFUND POLICY</h4>
-
                 <p><b>At Pickleball Club, all bookings are considered final once confirmed and paid.</b></p>
                 <p>No refunds will be issued for cancellations, no-shows, or unused bookings.</p>
                 <p>No rescheduling will be accommodated within 24 hours of your reserved time.</p>
                 <p>If you wish to reschedule your booking, the request must be made at least 24 hours before your scheduled playtime.</p>
                 <p>Any rescheduling requests made less than 24 hours before your booking will not be acknowledged.</p>
-
                 <hr>
-                <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smoot</b></p>
+                <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smooth operations.</b></p>
             </div>
         </div>
 

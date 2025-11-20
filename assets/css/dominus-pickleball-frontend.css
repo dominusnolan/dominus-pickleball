@@ -280,3 +280,42 @@
     margin-top: 0;
     color: var(--dp-primary-color);
 }
+
+
+/* ===== Mobile Layout Improvements ===== */
+@media (max-width: 768px) {
+    .dp-container {
+        flex-direction: column;
+        gap: 0;
+        padding: 10px;
+    }
+    .dp-left-panel,
+    .dp-right-panel {
+        min-width: 0;
+        width: 100%;
+        padding: 0;
+    }
+    .dp-right-panel {
+        margin-top: 30px;
+    }
+    .dp-booking-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .dp-legend {
+        margin: 24px 0 0 0;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 0.95em;
+    }
+    .dp-content {
+        margin-top: 24px !important;
+        font-size: 1em;
+        word-break: break-word;
+    }
+    .dp-time-slot-table th, .dp-time-slot-table td {
+        min-width: 60px;
+        font-size: 0.95em;
+        padding: 6px 2px;
+    }
+}
