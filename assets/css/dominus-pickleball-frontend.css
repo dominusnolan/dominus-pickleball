@@ -1,0 +1,186 @@
+/**
+ * Frontend CSS for Dominus Pickleball Booking Plugin
+ */
+
+:root {
+    --dp-primary-color: #2c3e50; /* Dark blue from the image */
+    --dp-secondary-color: #34495e;
+    --dp-accent-color: #3498db; /* Blue for selected items */
+    --dp-background-color: #ffffff;
+    --dp-grid-border-color: #ecf0f1;
+    --dp-unavailable-color: #f0f0f0; /* Light grey for unavailable */
+    --dp-booked-color: #27ae60;      /* Green for booked */
+    --dp-selected-color: #2980b9;    /* Dark blue for selected */
+    --dp-text-color: #333;
+    --dp-font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Main Container */
+.dp-container {
+    display: flex;
+    flex-wrap: wrap;
+    font-family: var(--dp-font-family);
+    background-color: var(--dp-background-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+/* Left Panel - Calendar and Info */
+.dp-left-panel {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.dp-header h2 {
+    color: var(--dp-primary-color);
+    margin-top: 0;
+}
+
+.dp-header p {
+    color: #7f8c8d;
+    margin: 5px 0;
+}
+
+/* Right Panel - Time Slots */
+.dp-right-panel {
+    flex: 3;
+    min-width: 600px;
+}
+
+.dp-booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.dp-booking-header h3 {
+    color: var(--dp-primary-color);
+    margin: 0;
+}
+
+/* Legend */
+.dp-legend {
+    display: flex;
+    gap: 15px;
+}
+
+.dp-legend-item {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+.dp-legend .dp-booked { background-color: var(--dp-booked-color); }
+.dp-legend .dp-selected { background-color: var(--dp-selected-color); }
+.dp-legend .dp-unavailable { background-color: var(--dp-unavailable-color); border: 1px solid #ddd; }
+
+
+/* Time Slot Grid */
+.dp-time-slot-grid {
+    overflow-x: auto;
+    border: 1px solid var(--dp-grid-border-color);
+    border-radius: 5px;
+}
+
+.dp-time-slot-table {
+    width: 100%;
+    border-collapse: collapse;
+    white-space: nowrap;
+}
+
+.dp-time-slot-table th,
+.dp-time-slot-table td {
+    border: 1px solid var(--dp-grid-border-color);
+    text-align: center;
+    min-width: 80px;
+}
+
+.dp-time-slot-table th {
+    background-color: var(--dp-primary-color);
+    color: white;
+    padding: 10px;
+}
+
+.dp-time-slot-table .court-name {
+    background-color: #f9f9f9;
+    font-weight: bold;
+    padding: 15px 10px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+.time-slot {
+    padding: 15px 10px;
+    cursor: pointer;
+    background-color: #fff;
+    transition: background-color 0.2s;
+}
+
+.time-slot.available:hover {
+    background-color: #e9f5ff;
+}
+
+.time-slot.selected {
+    background-color: var(--dp-selected-color) !important;
+    color: white;
+}
+
+.time-slot.booked {
+    background-color: var(--dp-booked-color);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.time-slot.unavailable {
+    background-color: var(--dp-unavailable-color);
+    cursor: not-allowed;
+}
+
+.dp-loader {
+    padding: 50px;
+    text-align: center;
+    font-size: 1.2em;
+    color: #7f8c8d;
+}
+
+/* Cart Button */
+.dp-cart-summary {
+    text-align: right;
+    margin-top: 20px;
+}
+
+.dp-button {
+    background-color: var(--dp-primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.dp-button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* Flatpickr Calendar Customization */
+#dp-date-picker {
+    visibility: hidden; /* We use an inline calendar */
+}
+.flatpickr-calendar {
+    box-shadow: none;
+    width: 100% !important;
+}
+.flatpickr-day.selected {
+    background: var(--dp-primary-color);
+    border-color: var(--dp-primary-color);
+}
