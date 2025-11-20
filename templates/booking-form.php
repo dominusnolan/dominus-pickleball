@@ -13,7 +13,7 @@ if ( ! defined( 'WPINC' ) ) {
         <div class="dp-left-panel">
             <div class="dp-header">
                 <h2>Pickleball Courts</h2>
-                <p><span class="icon-location"></span> Middleton Pickleball Club</p>
+                <p><span class="icon-location"></span> Match Point Sports Center</p>
                 <p><span class="icon-clock"></span> Each slot is 60 minutes.</p>
             </div>
             <div class="dp-calendar-container">
