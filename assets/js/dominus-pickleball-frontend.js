@@ -3,6 +3,13 @@
 
     $(function() {
 
+        // Defensive: Use server date if available, fallback to today
+        var serverToday = (
+            dp_ajax && dp_ajax.today
+                ? dp_ajax.today
+                : (new Date()).toISOString().split('T')[0]
+        );
+
         const state = {
             selectedDate: null,
             selectedSlots: [],
@@ -10,18 +17,22 @@
             currencySymbol: '₱', // Default currency symbol
         };
 
+        // Initialize Flatpickr with server-provided today, disable past dates robustly
         const datePicker = flatpickr("#dp-date-picker", {
             inline: true,
             dateFormat: "Y-m-d",
-            defaultDate: dp_ajax.today,
-            minDate: dp_ajax.today, // Keep minDate for navigation boundaries
+            defaultDate: serverToday,
+            minDate: serverToday,
             disable: [
                 function(date) {
-                    // Create a date object for today at midnight for accurate comparison.
-                    // The replace() call is to prevent issues with Safari parsing 'YYYY-MM-DD'.
-                    const today = new Date(dp_ajax.today.replace(/-/g, '/') + ' 00:00:00');
-                    // Set the time of the iterated date to midnight to compare only the date part.
-                    date.setHours(0, 0, 0, 0);
+                    if (!serverToday) return false;
+                    // Use local timezone for both; set hours to midnight
+                    const todayParts = serverToday.split('-');
+                    const today = new Date(todayParts[0], todayParts[1] - 1, todayParts[2]);
+                    today.setHours(0,0,0,0);
+
+                    date.setHours(0,0,0,0);
+
                     return date < today;
                 }
             ],
@@ -99,7 +110,7 @@
                     courtName: slot.data('court-name'),
                     time: slot.data('time'),
                     date: state.selectedDate,
-                    hour: parseInt(slot.data('time').match(/(\d+)/)[0]) + (slot.data('time').includes('pm') && !slot.data('time').includes('12pm') ? 12 : 0) // for sorting
+                    hour: parseInt(slot.data('time').match(/(\d+)/)[0]) + (slot.data('time').includes('pm') && !slot.data('time').includes('12pm') ? 12 : 0)
                 });
             }
             slot.toggleClass('selected');
@@ -174,11 +185,8 @@
             
             updateSummaryView();
         });
-        
-        $('#dp-booking-form').on('submit', function(e) {
-            // Client-side login check removed for reliability.
-            // The server-side check in DP_WooCommerce->handle_add_slots_to_cart_form() will handle non-logged-in users.
 
+        $('#dp-booking-form').on('submit', function(e) {
             const btn = $('#dp-add-to-cart-btn');
             btn.prop('disabled', true).text('Processing...');
 
@@ -195,8 +203,8 @@
             // The form will now submit naturally.
         });
 
-        // Initial load. Run after flatpickr is initialized.
-        if (datePicker.selectedDates.length > 0) {
+        // Initial load after flatpickr is initialized
+        if (datePicker.selectedDates && datePicker.selectedDates.length > 0) {
             const initialDate = datePicker.selectedDates[0];
             state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
             updateSelectedDateDisplay(initialDate);
