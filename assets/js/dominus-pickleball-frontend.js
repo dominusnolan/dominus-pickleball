@@ -103,7 +103,7 @@
             if (state.selectedSlots.length === 0) {
                 summaryContainer.html('<p class="dp-summary-placeholder">Your selected slots will appear here.</p>');
                 $('#dp-add-to-cart-btn').prop('disabled', true).text('Book Now');
-                $('#dp-summary-total-price').text(`${state.currencySymbol}0.00`);
+                $('#dp-summary-total-price').html(`${state.currencySymbol}0.00`);
                 return;
             }
 
@@ -126,7 +126,7 @@
                 summaryContainer.append(itemHtml);
             });
 
-            $('#dp-summary-total-price').text(`${state.currencySymbol}${total.toFixed(2)}`);
+            $('#dp-summary-total-price').html(`${state.currencySymbol}${total.toFixed(2)}`);
             $('#dp-add-to-cart-btn').prop('disabled', false);
         }
 
