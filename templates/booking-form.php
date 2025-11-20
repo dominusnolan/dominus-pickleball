@@ -56,8 +56,28 @@ if ( ! defined( 'WPINC' ) ) {
             <p>Any rescheduling requests made less than 24 hours before your booking will not be acknowledged.</p>
 
             <hr>
-            <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smooth operations for all guests.</b></p>
+            <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smoot[...]
         </div>
     </div>
+
+    <?php if ( ! is_user_logged_in() && class_exists( 'WooCommerce' ) ) : ?>
+    <div id="dp-login-modal" class="dp-modal">
+        <div class="dp-modal-content">
+            <span class="dp-modal-close">&times;</span>
+            <div class="dp-woocommerce-forms">
+                <div class="dp-form-login">
+                    <h2>Login</h2>
+                    <?php woocommerce_login_form(); ?>
+                </div>
+                <?php if ( get_option( 'woocommerce_enable_myaccount_registration' ) === 'yes' ) : ?>
+                <div class="dp-form-register">
+                    <h2>Register</h2>
+                    <?php woocommerce_register_form(); ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
 </div>

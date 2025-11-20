@@ -167,9 +167,28 @@
             updateSummaryView();
         });
 
+        // Modal handling
+        const modal = $('#dp-login-modal');
+        const closeModal = $('.dp-modal-close');
+
+        closeModal.on('click', function() {
+            modal.hide();
+        });
+
+        $(window).on('click', function(event) {
+            if ($(event.target).is(modal)) {
+                modal.hide();
+            }
+        });
+
         $('#dp-add-to-cart-btn').on('click', function() {
-            // This functionality remains the same
             const btn = $(this);
+
+            if ( ! dp_ajax.is_user_logged_in ) {
+                modal.show();
+                return;
+            }
+            
             btn.prop('disabled', true).text('Adding...');
 
             $.ajax({
@@ -191,6 +210,12 @@
             });
         });
         
+        // After login/registration via AJAX, WooCommerce triggers this event.
+        // We can use it to either proceed to cart or reload the page.
+        $(document.body).on('login_success registration_successful', function() {
+            $('#dp-add-to-cart-btn').click();
+        });
+
         // Initial load
         const initialDate = datePicker.selectedDates[0];
         if (initialDate) {
