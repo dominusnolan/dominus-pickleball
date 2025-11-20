@@ -76,7 +76,7 @@
         function renderTimeSlotGrid(data) {
             const grid = $('#dp-time-slot-grid');
             grid.empty();
-            let table = '<table class="dp-time-slot-table"><thead><tr><th>m</th>';
+            let table = '<table class="dp-time-slot-table"><thead><tr><th> </th>';
             data.time_headers.forEach(header => { table += `<th>${header}</th>`; });
             table += '</tr></thead><tbody>';
             data.courts.forEach(court => {
