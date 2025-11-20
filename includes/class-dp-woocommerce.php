@@ -12,9 +12,8 @@ class DP_WooCommerce {
     const BOOKING_PRODUCT_SKU = 'DP-PICKLEBALL-SLOT';
 
     public function __construct() {
-        // AJAX action for adding selected slots to the cart
-        add_action( 'wp_ajax_dp_add_slots_to_cart', array( $this, 'add_slots_to_cart' ) );
-        add_action( 'wp_ajax_nopriv_dp_add_slots_to_cart', array( $this, 'add_slots_to_cart' ) );
+        // Use wp_loaded to catch the form submission before the page tries to render.
+        add_action( 'wp_loaded', array( $this, 'handle_add_slots_to_cart_form' ) );
 
         // Add booking details to cart items
         add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_booking_meta_to_cart_item' ), 10, 3 );
@@ -27,34 +26,56 @@ class DP_WooCommerce {
     }
 
     /**
-     * Handles the AJAX request to add selected slots to the cart.
+     * Handles the non-AJAX form submission to add selected slots to the cart.
      */
-    public function add_slots_to_cart() {
-        check_ajax_referer( 'dp_booking_nonce', 'nonce' );
-
-        if ( ! isset( $_POST['slots'] ) || empty( $_POST['slots'] ) ) {
-            wp_send_json_error( array( 'message' => 'No slots selected.' ) );
+    public function handle_add_slots_to_cart_form() {
+        // Check if our form has been submitted.
+        if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'dp_add_slots_to_cart_form' ) {
+            return;
         }
 
-        $slots = $_POST['slots'];
+        // Verify the nonce for security.
+        if ( ! isset( $_POST['dp_add_slots_nonce'] ) || ! wp_verify_nonce( $_POST['dp_add_slots_nonce'], 'dp_add_slots_to_cart_action' ) ) {
+            wc_add_notice( __( 'Security check failed. Please try again.', 'dominus-pickleball' ), 'error' );
+            wp_redirect( wc_get_cart_url() );
+            exit();
+        }
+
+        if ( ! is_user_logged_in() ) {
+            wc_add_notice( __( 'You must be logged in to book a court.', 'dominus-pickleball' ), 'error' );
+            wp_redirect( wc_get_page_permalink('myaccount') ); // Redirect to login/register page
+            exit();
+        }
+
+        if ( ! isset( $_POST['slots'] ) || empty( $_POST['slots'] ) ) {
+            wc_add_notice( __( 'No slots were selected. Please select a slot to book.', 'dominus-pickleball' ), 'error' );
+            wp_redirect( $_POST['_wp_http_referer'] ); // Redirect back to the booking page
+            exit();
+        }
+
+        $slots = (array) $_POST['slots'];
         $product_id = $this->get_booking_product_id();
 
         if ( ! $product_id ) {
-            wp_send_json_error( array( 'message' => 'Booking product not found. Please contact support.' ) );
+            wc_add_notice( __( 'Booking product not found. Please contact support.', 'dominus-pickleball' ), 'error' );
+            wp_redirect( wc_get_cart_url() );
+            exit();
         }
 
-        // Temporarily store slots in the session to be picked up by the cart item filter.
+        // Use a session to pass the booking data.
         WC()->session->set( 'dp_pending_booking_slots', $slots );
 
         foreach ( $slots as $key => $slot ) {
-            // We pass a unique key to the add_to_cart function to ensure it's picked up by the filter.
+            // The 'dp_slot_key' is used to retrieve the correct slot meta in the next step.
             WC()->cart->add_to_cart( $product_id, 1, 0, array(), array( 'dp_slot_key' => $key ) );
         }
 
-        // Clear the session variable after use.
+        // Clear the session variable after we're done.
         WC()->session->set( 'dp_pending_booking_slots', null );
-
-        wp_send_json_success( array( 'cart_url' => wc_get_cart_url() ) );
+        
+        // Redirect to the cart page to view the items.
+        wp_redirect( wc_get_cart_url() );
+        exit();
     }
 
     /**
@@ -65,6 +86,15 @@ class DP_WooCommerce {
         // Check if the product already exists by SKU
         $product_id = wc_get_product_id_by_sku( self::BOOKING_PRODUCT_SKU );
         if ($product_id) {
+            $product = wc_get_product($product_id);
+            $settings = get_option('dp_settings');
+            $price = isset($settings['dp_slot_price']) ? $settings['dp_slot_price'] : '20.00';
+            // Update price if it has changed in settings
+            if ($product->get_price() !== $price) {
+                $product->set_regular_price($price);
+                $product->set_price($price);
+                $product->save();
+            }
             return $product_id;
         }
 
@@ -78,17 +108,16 @@ class DP_WooCommerce {
         $product->set_regular_price( $price );
         $product->set_price( $price );
         $product->set_status( 'publish' );
-        $product->set_catalog_visibility( 'hidden' ); // This makes it not show up in the shop
+        $product->set_catalog_visibility( 'hidden' );
         $product->set_description('Fee for one 60-minute pickleball court slot.');
-        $product->set_virtual( true ); // No shipping needed
+        $product->set_virtual( true );
         $product_id = $product->save();
 
         return $product_id;
     }
 
     /**
-     * Add custom booking data to the cart item.
-     * CORRECTED: The function must accept 3 arguments: $cart_item_data, $product_id, $variation_id
+     * Add custom booking data to the cart item using the session data.
      */
     public function add_booking_meta_to_cart_item( $cart_item_data, $product_id, $variation_id ) {
         if ( isset( $cart_item_data['dp_slot_key'] ) ) {
@@ -102,13 +131,12 @@ class DP_WooCommerce {
                     'courtName' => sanitize_text_field( $slot['courtName'] ),
                     'time'      => sanitize_text_field( $slot['time'] ),
                 );
-                // Make each booking a unique item in the cart
+                // Ensure each booking is a unique cart item.
                 $cart_item_data['unique_key'] = md5( microtime().rand() );
             }
         }
         return $cart_item_data;
     }
-
 
     /**
      * Display the booking meta in the cart and checkout pages.

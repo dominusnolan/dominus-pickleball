@@ -102,7 +102,7 @@
 
             if (state.selectedSlots.length === 0) {
                 summaryContainer.html('<p class="dp-summary-placeholder">Your selected slots will appear here.</p>');
-                $('#dp-add-to-cart-btn').prop('disabled', true).text('Book Now');
+                $('#dp-add-to-cart-btn').prop('disabled', true);
                 $('#dp-summary-total-price').html(`${state.currencySymbol}0.00`);
                 return;
             }
@@ -157,9 +157,7 @@
             const slotsToRemove = groupConsecutiveSlots(state.selectedSlots)[groupKey].slots;
             
             slotsToRemove.forEach(slotToRemove => {
-                // Deselect in grid
                 $(`.time-slot[data-slot-id="${slotToRemove.id}"]`).removeClass('selected');
-                // Remove from state
                 const index = state.selectedSlots.findIndex(s => s.id === slotToRemove.id);
                 if (index > -1) state.selectedSlots.splice(index, 1);
             });
@@ -167,7 +165,6 @@
             updateSummaryView();
         });
 
-        // Modal handling
         const modal = $('#dp-login-modal');
         const closeModal = $('.dp-modal-close');
 
@@ -180,43 +177,33 @@
                 modal.hide();
             }
         });
-
-        $('#dp-add-to-cart-btn').on('click', function() {
-            const btn = $(this);
-
-            if ( ! dp_ajax.is_user_logged_in ) {
-                modal.show();
-                return;
-            }
-            
-            btn.prop('disabled', true).text('Adding...');
-
-            $.ajax({
-                url: dp_ajax.ajax_url,
-                type: 'POST',
-                data: { action: 'dp_add_slots_to_cart', nonce: dp_ajax.nonce, slots: state.selectedSlots },
-                success: function(response) {
-                    if (response.success) {
-                        window.location.href = response.data.cart_url;
-                    } else {
-                        alert(response.data.message);
-                        btn.prop('disabled', false).text('Book Now');
-                    }
-                },
-                error: function() {
-                    alert('An error occurred while adding items to the cart.');
-                    btn.prop('disabled', false).text('Book Now');
-                }
-            });
-        });
         
-        // After login/registration via AJAX, WooCommerce triggers this event.
-        // We can use it to either proceed to cart or reload the page.
-        $(document.body).on('login_success registration_successful', function() {
-            $('#dp-add-to-cart-btn').click();
+        $('#dp-booking-form').on('submit', function(e) {
+            
+            const btn = $('#dp-add-to-cart-btn');
+            btn.prop('disabled', true).text('Processing...');
+
+            const hiddenSlotsContainer = $('#dp-hidden-slots-container');
+            hiddenSlotsContainer.empty(); // Clear previous hidden inputs
+
+            // Create a hidden input for each selected slot
+            state.selectedSlots.forEach((slot, index) => {
+                Object.keys(slot).forEach(key => {
+                    const input = `<input type="hidden" name="slots[${index}][${key}]" value="${slot[key]}">`;
+                    hiddenSlotsContainer.append(input);
+                });
+            });
+
+            // The form will now submit naturally
         });
 
-        // Initial load
+        $(document.body).on('login_success registration_successful', function() {
+            // After successful login, hide modal and submit the form
+            dp_ajax.is_user_logged_in = true;
+            modal.hide();
+            $('#dp-booking-form').submit(); // Trigger form submission
+        });
+
         const initialDate = datePicker.selectedDates[0];
         if (initialDate) {
             state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
