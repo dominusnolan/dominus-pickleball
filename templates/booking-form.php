@@ -56,7 +56,7 @@ if ( ! defined( 'WPINC' ) ) {
             <p>Any rescheduling requests made less than 24 hours before your booking will not be acknowledged.</p>
 
             <hr>
-            <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smoot[...]
+            <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smooth operations for all guests.</b></p>
         </div>
     </div>
 
