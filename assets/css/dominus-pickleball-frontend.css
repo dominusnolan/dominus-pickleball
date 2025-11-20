@@ -67,7 +67,7 @@
 }
 
 /* Legend */
-.dp-legend { display: flex; gap: 15px; }
+.dp-legend { display: flex; gap: 15px; margin-top: 30px !important;}
 .dp-legend-item { display: inline-block; width: 15px; height: 15px; border-radius: 3px; vertical-align: middle; margin-right: 5px; }
 .dp-legend .dp-booked { background-color: var(--dp-booked-color); }
 .dp-legend .dp-selected { background-color: var(--dp-selected-color); }
@@ -307,7 +307,7 @@
         flex-wrap: wrap;
         gap: 10px;
         font-size: 0.95em;
-        margin-top: 30px !important;
+        
     }
     .dp-content {
         margin-top: 24px !important;
