@@ -24,11 +24,22 @@
                 }
             },
         });
-
+        
+        // This function must be defined before it is called
         function updateSelectedDateDisplay(date) {
             const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
             $('#dp-selected-date').text(date.toLocaleDateString('en-US', options));
         }
+
+        // Corrected Initial Load
+        // Ensure the initial state is set after the flatpickr instance is created.
+        if (datePicker.selectedDates.length > 0) {
+            const initialDate = datePicker.selectedDates[0];
+            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
+            updateSelectedDateDisplay(initialDate);
+            fetchTimeSlots(state.selectedDate);
+        }
+
 
         function fetchTimeSlots(date) {
             const grid = $('#dp-time-slot-grid');
@@ -185,14 +196,6 @@
 
             // The form will now submit naturally.
         });
-
-        // Initial load
-        const initialDate = datePicker.selectedDates[0];
-        if (initialDate) {
-            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
-            updateSelectedDateDisplay(initialDate);
-            fetchTimeSlots(state.selectedDate);
-        }
     });
 
 })(jQuery, flatpickr, dp_ajax);
