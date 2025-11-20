@@ -56,9 +56,11 @@ class DP_Assets {
                 'dominus-pickleball-frontend',
                 'dp_ajax',
                 array(
-                    'ajax_url' => admin_url( 'admin-ajax.php' ),
-                    'nonce'    => wp_create_nonce( 'dp_booking_nonce' ),
+                    'ajax_url'          => admin_url( 'admin-ajax.php' ),
+                    'nonce'             => wp_create_nonce( 'dp_booking_nonce' ),
                     'is_user_logged_in' => is_user_logged_in(),
+                    // Use WP server time in site timezone (avoids client timezone issues)
+                    'today'             => current_time( 'Y-m-d' ),
                 )
             );
         }

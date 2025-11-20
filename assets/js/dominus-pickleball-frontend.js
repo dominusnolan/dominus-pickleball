@@ -13,8 +13,9 @@
         const datePicker = flatpickr("#dp-date-picker", {
             inline: true,
             dateFormat: "Y-m-d",
-            defaultDate: "2025-11-20",
-            minDate: "today",
+            // Use server-provided "today" for both default and minDate
+            defaultDate: dp_ajax.today,
+            minDate: dp_ajax.today,
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length > 0) {
                     state.selectedDate = dateStr;
@@ -179,7 +180,8 @@
         });
         
         $('#dp-booking-form').on('submit', function(e) {
-            
+ 
+
             const btn = $('#dp-add-to-cart-btn');
             btn.prop('disabled', true).text('Processing...');
 
@@ -204,6 +206,7 @@
             $('#dp-booking-form').submit(); // Trigger form submission
         });
 
+        // Initial load
         const initialDate = datePicker.selectedDates[0];
         if (initialDate) {
             state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
