@@ -10,12 +10,8 @@ if ( ! defined( 'WPINC' ) ) {
 class DP_Ajax {
 
     public function __construct() {
-        // The action hook for fetching time slots
         add_action( 'wp_ajax_dp_get_time_slots', array( $this, 'get_time_slots' ) );
         add_action( 'wp_ajax_nopriv_dp_get_time_slots', array( $this, 'get_time_slots' ) );
-
-        // The action hook for adding to cart (handled in DP_WooCommerce, but initialized here for structure)
-        // This will be handled by the DP_WooCommerce class.
     }
 
     /**
@@ -31,110 +27,76 @@ class DP_Ajax {
 
         $settings = get_option( 'dp_settings', array(
             'dp_number_of_courts' => 3,
-            'dp_start_time' => '07:00',
-            'dp_end_time' => '23:00'
-        ));
+            'dp_start_time'       => '07:00',
+            'dp_end_time'         => '23:00',
+        ) );
 
         try {
-            // Define a WordPress timezone object
-            $timezone = new DateTimeZone( get_option('timezone_string') ? get_option('timezone_string') : 'UTC' );
-            
-            $start_time = new DateTime( $settings['dp_start_time'], $timezone );
-            $end_time = new DateTime( $settings['dp_end_time'], $timezone );
-            $interval = new DateInterval('PT60M'); // 60 minutes interval
+            $timezone_string = get_option('timezone_string');
+            $timezone        = new DateTimeZone( $timezone_string ? $timezone_string : 'UTC' );
 
-            // Generate time headers
+            $start_time = new DateTime( $settings['dp_start_time'], $timezone );
+            $end_time   = new DateTime( $settings['dp_end_time'], $timezone );
+            $interval   = new DateInterval('PT60M');
+
+            // Generate headers
             $time_headers = [];
             $current = clone $start_time;
-            while ($current < $end_time) {
-                $time_headers[] = $current->format('ga'); // e.g., 7am, 8am
-                $current->add($interval);
+            while ( $current < $end_time ) {
+                $time_headers[] = $current->format('ga');
+                $current->add( $interval );
             }
 
-            // Generate court and slot data
+            // Retrieve booked slot index (date => court => time => order_id)
+            $booked_index = get_option( DP_WooCommerce::BOOKED_SLOTS_OPTION, array() );
+            $date_bookings = isset( $booked_index[ $date ] ) ? $booked_index[ $date ] : array();
+
             $courts = [];
-            for ($i = 1; $i <= (int) $settings['dp_number_of_courts']; $i++) {
+            for ( $i = 1; $i <= (int)$settings['dp_number_of_courts']; $i++ ) {
+                $court_name  = 'Court ' . $i;
                 $court_slots = [];
-                $court_name = 'Court ' . $i;
-                foreach ($time_headers as $time) {
-                    $status = $this->get_slot_status($date, $court_name, $time, $timezone);
-                    $court_slots[$time] = ['status' => $status];
+                foreach ( $time_headers as $time ) {
+                    $status = $this->determine_slot_status( $date, $court_name, $time, $date_bookings, $timezone );
+                    $court_slots[ $time ] = array( 'status' => $status );
                 }
-                $courts[] = [
-                    'id' => $i,
-                    'name' => $court_name,
-                    'slots' => $court_slots
-                ];
+                $courts[] = array(
+                    'id'    => $i,
+                    'name'  => $court_name,
+                    'slots' => $court_slots,
+                );
             }
 
-            $response_data = [
-                'time_headers' => $time_headers,
-                'courts' => $courts,
-            ];
-
-            $settings = get_option('dp_settings');
-            $response_data['price_per_slot'] = isset($settings['dp_slot_price']) ? $settings['dp_slot_price'] : '20.00';
-            $response_data['currency_symbol'] = get_woocommerce_currency_symbol(); // Use WooCommerce's currency
+            $response_data = array(
+                'time_headers'     => $time_headers,
+                'courts'           => $courts,
+                'price_per_slot'   => isset( $settings['dp_slot_price'] ) ? $settings['dp_slot_price'] : '20.00',
+                'currency_symbol'  => get_woocommerce_currency_symbol(),
+            );
 
             wp_send_json_success( $response_data );
 
-        } catch (Exception $e) {
+        } catch ( Exception $e ) {
             wp_send_json_error( array( 'message' => 'Error generating time slots.' ) );
         }
     }
-    
+
     /**
-     * Determines the status of a single time slot by checking WooCommerce orders.
-     *
-     * @param string $date The date of the slot.
-     * @param string $court_name The name of the court.
-     * @param string $time The time of the slot.
-     * @param DateTimeZone $timezone The WordPress site timezone.
-     * @return string 'available', 'booked', or 'unavailable'.
+     * Determine status for a single slot.
      */
-    private function get_slot_status($date, $court_name, $time, $timezone) {
-        // Check if the time is in the past for the given date
-        $now = new DateTime('now', $timezone);
-        // Create slot datetime object with the site's timezone
+    private function determine_slot_status( $date, $court_name, $time, $date_bookings, $timezone ) {
+        // Past times become unavailable
         try {
-            $slot_datetime = new DateTime($date . ' ' . $time, $timezone);
-            if ($slot_datetime < $now) {
+            $slot_dt = new DateTime( $date . ' ' . $time, $timezone );
+            $now     = new DateTime( 'now', $timezone );
+            if ( $slot_dt < $now ) {
                 return 'unavailable';
             }
-        } catch (Exception $e) {
-            // If the date/time format is invalid, treat as unavailable
+        } catch ( Exception $e ) {
             return 'unavailable';
         }
 
-        // --- REAL IMPLEMENTATION ---
-        // Query WooCommerce for orders with matching booking data.
-        $args = array(
-            'limit' => -1, // Check all orders
-            'status' => array('wc-processing', 'wc-completed'), // Only check paid orders
-            'meta_query' => array(
-                'relation' => 'AND',
-                array(
-                    'key' => 'Date',
-                    'value' => $date,
-                    'compare' => '=',
-                ),
-                array(
-                    'key' => 'Court',
-                    'value' => $court_name,
-                    'compare' => '=',
-                ),
-                array(
-                    'key' => 'Time',
-                    'value' => $time,
-                    'compare' => '=',
-                ),
-            ),
-        );
-
-        $orders = wc_get_orders($args);
-
-        // If any order is found with this slot, it's booked.
-        if ( ! empty($orders) ) {
+        // Booked?
+        if ( isset( $date_bookings[ $court_name ][ $time ] ) ) {
             return 'booked';
         }
 
