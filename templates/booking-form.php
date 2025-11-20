@@ -45,6 +45,19 @@ if ( ! defined( 'WPINC' ) ) {
         <div id="dp-time-slot-grid" class="dp-time-slot-grid">
             <div class="dp-loader">Loading...</div>
         </div>
+        <div class="dp-content" style="margin-top:20px">
+            <h3>Cancellation policy</h3>
+            <h4>NO RESCHEDULING, NO REFUND POLICY</h4>
+
+            <p><b>At Pickleball Club, all bookings are considered final once confirmed and paid.</b></p>
+            <p>No refunds will be issued for cancellations, no-shows, or unused bookings.</p>
+            <p>No rescheduling will be accommodated within 24 hours of your reserved time.</p>
+            <p>If you wish to reschedule your booking, the request must be made at least 24 hours before your scheduled playtime.</p>
+            <p>Any rescheduling requests made less than 24 hours before your booking will not be acknowledged.</p>
+
+            <hr>
+            <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smooth operations for all guests.</b></p>
+        </div>
     </div>
 
 </div>
