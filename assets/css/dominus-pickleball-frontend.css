@@ -82,7 +82,7 @@
 .time-slot { padding: 15px 10px; cursor: pointer; background-color: #fff; transition: background-color 0.2s; }
 .time-slot.available:hover { background-color: #e9f5ff; }
 .time-slot.selected { background-color: var(--dp-selected-color) !important; color: white; }
-.time-slot.booked { background-color: var(--dp-booked-color); cursor: not-allowed; opacity: 0.7; }
+.time-slot.booked { background-color: var(--dp-booked-color); cursor: not-allowed; opacity: 0.7; color: #FFF !important }
 .time-slot.unavailable { background-color: var(--dp-unavailable-color); cursor: not-allowed; }
 .dp-loader { padding: 50px; text-align: center; font-size: 1.2em; color: #7f8c8d; }
 
