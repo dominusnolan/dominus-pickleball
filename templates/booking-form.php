@@ -6,6 +6,7 @@ if ( ! defined( 'WPINC' ) ) {
 ?>
 
 <div id="dominus-pickleball-app" class="dp-container">
+    
     <div class="dp-left-panel">
         <div class="dp-header">
             <h2>Pickleball Courts</h2>
@@ -15,7 +16,23 @@ if ( ! defined( 'WPINC' ) ) {
         <div class="dp-calendar-container">
             <input type="text" id="dp-date-picker" placeholder="Select Date...">
         </div>
+        
+        <!-- The summary panel is now here -->
+        <div class="dp-summary-panel">
+            <h3>Your selection</h3>
+            <div id="dp-selection-summary-items" class="dp-selection-summary-items">
+                <p class="dp-summary-placeholder">Your selected slots will appear here.</p>
+            </div>
+            <div class="dp-summary-footer">
+                <div class="dp-summary-total">
+                    <span>Total</span>
+                    <strong id="dp-summary-total-price">₱0.00</strong>
+                </div>
+                <button id="dp-add-to-cart-btn" class="dp-button" disabled>Book Now</button>
+            </div>
+        </div>
     </div>
+
     <div class="dp-right-panel">
         <div class="dp-booking-header">
             <h3>Select slots for <span id="dp-selected-date"></span></h3>
@@ -26,14 +43,8 @@ if ( ! defined( 'WPINC' ) ) {
             </div>
         </div>
         <div id="dp-time-slot-grid" class="dp-time-slot-grid">
-            <!-- Time slots will be loaded here by JavaScript -->
             <div class="dp-loader">Loading...</div>
         </div>
-        <div class="dp-cart-summary">
-             <button id="dp-add-to-cart-btn" class="dp-button" disabled>Add to Cart</button>
-        </div>
     </div>
-     <div class="dp-image-slider">
-            <!-- You can add your image slider here if you want -->
-     </div>
+
 </div>

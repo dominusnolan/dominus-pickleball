@@ -3,17 +3,17 @@
 
     $(function() {
 
-        // State management
         const state = {
             selectedDate: null,
             selectedSlots: [],
+            pricePerSlot: 0, // This will be fetched from backend
+            currencySymbol: '₱', // Default currency symbol
         };
 
-        // 1. Initialize the Calendar (Flatpickr)
         const datePicker = flatpickr("#dp-date-picker", {
-            inline: true, // Show the calendar inline
+            inline: true,
             dateFormat: "Y-m-d",
-            defaultDate: "2025-11-20", // Set default to match the user's context
+            defaultDate: "2025-11-20",
             minDate: "today",
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length > 0) {
@@ -24,36 +24,23 @@
             },
         });
 
-        // Function to format and display the selected date
         function updateSelectedDateDisplay(date) {
             const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
             $('#dp-selected-date').text(date.toLocaleDateString('en-US', options));
         }
-        
-        // Trigger initial fetch for the default date
-        const initialDate = datePicker.selectedDates[0];
-        if (initialDate) {
-            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
-            updateSelectedDateDisplay(initialDate);
-            fetchTimeSlots(state.selectedDate);
-        }
 
-
-        // 2. Fetch Time Slots via AJAX
         function fetchTimeSlots(date) {
             const grid = $('#dp-time-slot-grid');
-            grid.html('<div class="dp-loader">Loading...</div>'); // Show loader
+            grid.html('<div class="dp-loader">Loading...</div>');
 
             $.ajax({
                 url: dp_ajax.ajax_url,
                 type: 'POST',
-                data: {
-                    action: 'dp_get_time_slots',
-                    nonce: dp_ajax.nonce,
-                    date: date,
-                },
+                data: { action: 'dp_get_time_slots', nonce: dp_ajax.nonce, date: date },
                 success: function(response) {
                     if (response.success) {
+                        state.pricePerSlot = parseFloat(response.data.price_per_slot);
+                        state.currencySymbol = response.data.currency_symbol;
                         renderTimeSlotGrid(response.data);
                     } else {
                         grid.html(`<div class="dp-loader">${response.data.message}</div>`);
@@ -65,104 +52,152 @@
             });
         }
 
-        // 3. Render the Time Slot Grid
         function renderTimeSlotGrid(data) {
             const grid = $('#dp-time-slot-grid');
             grid.empty();
-
             let table = '<table class="dp-time-slot-table"><thead><tr><th>m</th>';
-            data.time_headers.forEach(header => {
-                table += `<th>${header}</th>`;
-            });
+            data.time_headers.forEach(header => { table += `<th>${header}</th>`; });
             table += '</tr></thead><tbody>';
-
             data.courts.forEach(court => {
                 table += `<tr><td class="court-name">${court.name}</td>`;
                 data.time_headers.forEach(time => {
                     const slotInfo = court.slots[time];
-                    let classes = `time-slot ${slotInfo.status}`; // status: available, booked, unavailable
+                    let classes = `time-slot ${slotInfo.status}`;
                     const slotId = `${state.selectedDate}_${court.id}_${time}`;
-                    
-                    // Check if the slot is in our current selection state
                     if (state.selectedSlots.find(s => s.id === slotId)) {
                         classes += ' selected';
                     }
-
                     table += `<td class="${classes}" data-slot-id="${slotId}" data-court-id="${court.id}" data-court-name="${court.name}" data-time="${time}">${time}</td>`;
                 });
                 table += '</tr>';
             });
-
             table += '</tbody></table>';
             grid.html(table);
         }
 
-        // 4. Handle Slot Selection
         $('#dp-time-slot-grid').on('click', '.time-slot.available', function() {
             const slot = $(this);
-            slot.toggleClass('selected');
-            
-            const slotData = {
-                id: slot.data('slot-id'),
-                courtId: slot.data('court-id'),
-                courtName: slot.data('court-name'),
-                time: slot.data('time'),
-                date: state.selectedDate
-            };
-            
-            const index = state.selectedSlots.findIndex(s => s.id === slotData.id);
+            const slotId = slot.data('slot-id');
+            const index = state.selectedSlots.findIndex(s => s.id === slotId);
 
             if (index > -1) {
-                // It was selected, now deselect it
                 state.selectedSlots.splice(index, 1);
             } else {
-                // It was not selected, now select it
-                state.selectedSlots.push(slotData);
+                state.selectedSlots.push({
+                    id: slotId,
+                    courtId: slot.data('court-id'),
+                    courtName: slot.data('court-name'),
+                    time: slot.data('time'),
+                    date: state.selectedDate,
+                    hour: parseInt(slot.data('time').match(/(\d+)/)[0]) + (slot.data('time').includes('pm') && !slot.data('time').includes('12pm') ? 12 : 0) // for sorting
+                });
             }
-            
-            updateCartButton();
+            slot.toggleClass('selected');
+            updateSummaryView();
         });
-        
-        // 5. Update and Handle "Add to Cart" button
-        function updateCartButton() {
-            const btn = $('#dp-add-to-cart-btn');
-            if (state.selectedSlots.length > 0) {
-                btn.prop('disabled', false);
-                btn.text(`Add ${state.selectedSlots.length} item(s) to Cart`);
-            } else {
-                btn.prop('disabled', true);
-                btn.text('Add to Cart');
+
+        function updateSummaryView() {
+            const summaryContainer = $('#dp-selection-summary-items');
+            summaryContainer.empty();
+
+            if (state.selectedSlots.length === 0) {
+                summaryContainer.html('<p class="dp-summary-placeholder">Your selected slots will appear here.</p>');
+                $('#dp-add-to-cart-btn').prop('disabled', true).text('Book Now');
+                $('#dp-summary-total-price').text(`${state.currencySymbol}0.00`);
+                return;
             }
+
+            const groupedSlots = groupConsecutiveSlots(state.selectedSlots);
+            let total = 0;
+
+            Object.values(groupedSlots).forEach(group => {
+                const price = group.slots.length * state.pricePerSlot;
+                total += price;
+                const formattedDate = new Date(group.date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+
+                const itemHtml = `
+                    <div class="dp-summary-item">
+                        <span class="dp-summary-item-date">${formattedDate}</span>
+                        <span class="dp-summary-item-price">${state.currencySymbol}${price.toFixed(2)}</span>
+                        <span class="dp-summary-item-time">${group.timeRange}</span>
+                        <span class="dp-summary-item-delete" data-group-key="${group.key}" title="Remove selection">🗑️</span>
+                        <span class="dp-summary-item-court">${group.courtName}</span>
+                    </div>`;
+                summaryContainer.append(itemHtml);
+            });
+
+            $('#dp-summary-total-price').text(`${state.currencySymbol}${total.toFixed(2)}`);
+            $('#dp-add-to-cart-btn').prop('disabled', false);
         }
-        
+
+        function groupConsecutiveSlots(slots) {
+            const sorted = [...slots].sort((a, b) => a.courtId - b.courtId || a.hour - b.hour);
+            const groups = {};
+            sorted.forEach(slot => {
+                const key = `${slot.date}_${slot.courtId}`;
+                if (!groups[key]) {
+                    groups[key] = { key, date: slot.date, courtName: slot.courtName, slots: [] };
+                }
+                groups[key].slots.push(slot);
+            });
+
+            Object.values(groups).forEach(group => {
+                const startTime = group.slots[0].time;
+                const endTimeHour = group.slots[group.slots.length - 1].hour + 1;
+                const endSuffix = endTimeHour >= 12 ? 'pm' : 'am';
+                const formattedEndHour = endTimeHour > 12 ? endTimeHour - 12 : (endTimeHour === 0 ? 12 : endTimeHour);
+                const endTime = `${formattedEndHour}${endSuffix}`;
+                group.timeRange = `${startTime} - ${endTime}`;
+            });
+            return groups;
+        }
+
+        $('#dp-selection-summary-items').on('click', '.dp-summary-item-delete', function() {
+            const groupKey = $(this).data('group-key');
+            const slotsToRemove = groupConsecutiveSlots(state.selectedSlots)[groupKey].slots;
+            
+            slotsToRemove.forEach(slotToRemove => {
+                // Deselect in grid
+                $(`.time-slot[data-slot-id="${slotToRemove.id}"]`).removeClass('selected');
+                // Remove from state
+                const index = state.selectedSlots.findIndex(s => s.id === slotToRemove.id);
+                if (index > -1) state.selectedSlots.splice(index, 1);
+            });
+            
+            updateSummaryView();
+        });
+
         $('#dp-add-to-cart-btn').on('click', function() {
+            // This functionality remains the same
             const btn = $(this);
             btn.prop('disabled', true).text('Adding...');
 
             $.ajax({
                 url: dp_ajax.ajax_url,
                 type: 'POST',
-                data: {
-                    action: 'dp_add_slots_to_cart',
-                    nonce: dp_ajax.nonce,
-                    slots: state.selectedSlots
-                },
+                data: { action: 'dp_add_slots_to_cart', nonce: dp_ajax.nonce, slots: state.selectedSlots },
                 success: function(response) {
                     if (response.success) {
-                        // Redirect to cart page
                         window.location.href = response.data.cart_url;
                     } else {
                         alert(response.data.message);
-                        btn.prop('disabled', false).text('Add to Cart');
+                        btn.prop('disabled', false).text('Book Now');
                     }
                 },
                 error: function() {
                     alert('An error occurred while adding items to the cart.');
-                    btn.prop('disabled', false).text('Add to Cart');
+                    btn.prop('disabled', false).text('Book Now');
                 }
             });
         });
-
+        
+        // Initial load
+        const initialDate = datePicker.selectedDates[0];
+        if (initialDate) {
+            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
+            updateSelectedDateDisplay(initialDate);
+            fetchTimeSlots(state.selectedDate);
+        }
     });
 
 })(jQuery, flatpickr, dp_ajax);

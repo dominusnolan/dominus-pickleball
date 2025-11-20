@@ -68,6 +68,10 @@ class DP_Ajax {
                 'courts' => $courts,
             ];
 
+            $settings = get_option('dp_settings');
+            $response_data['price_per_slot'] = isset($settings['dp_slot_price']) ? $settings['dp_slot_price'] : '20.00';
+            $response_data['currency_symbol'] = get_woocommerce_currency_symbol(); // Use WooCommerce's currency
+
             wp_send_json_success( $response_data );
 
         } catch (Exception $e) {

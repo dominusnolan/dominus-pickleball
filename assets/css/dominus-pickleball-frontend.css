@@ -1,24 +1,24 @@
 /**
- * Frontend CSS for Dominus Pickleball Booking Plugin
+ * Frontend CSS for Dominus Pickleball Booking Plugin - Updated for 2-column Layout
  */
 
 :root {
-    --dp-primary-color: #2c3e50; /* Dark blue from the image */
+    --dp-primary-color: #2c3e50;
     --dp-secondary-color: #34495e;
-    --dp-accent-color: #3498db; /* Blue for selected items */
+    --dp-accent-color: #3498db;
     --dp-background-color: #ffffff;
     --dp-grid-border-color: #ecf0f1;
-    --dp-unavailable-color: #f0f0f0; /* Light grey for unavailable */
-    --dp-booked-color: #27ae60;      /* Green for booked */
-    --dp-selected-color: #2980b9;    /* Dark blue for selected */
+    --dp-unavailable-color: #f0f0f0;
+    --dp-booked-color: #27ae60;
+    --dp-selected-color: #2980b9;
     --dp-text-color: #333;
     --dp-font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* Main Container */
+/* Main Container - Back to 2-column Flex */
 .dp-container {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Allows wrapping on smaller screens */
     font-family: var(--dp-font-family);
     background-color: var(--dp-background-color);
     padding: 20px;
@@ -26,13 +26,16 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     max-width: 1200px;
     margin: 20px auto;
+    gap: 20px;
 }
 
-/* Left Panel - Calendar and Info */
+/* Left Panel - Calendar, Info, and Summary */
 .dp-left-panel {
     flex: 1;
-    min-width: 300px;
-    padding-right: 20px;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .dp-header h2 {
@@ -47,7 +50,7 @@
 
 /* Right Panel - Time Slots */
 .dp-right-panel {
-    flex: 3;
+    flex: 2; /* Takes more space */
     min-width: 600px;
 }
 
@@ -64,123 +67,138 @@
 }
 
 /* Legend */
-.dp-legend {
-    display: flex;
-    gap: 15px;
-}
-
-.dp-legend-item {
-    display: inline-block;
-    width: 15px;
-    height: 15px;
-    border-radius: 3px;
-    vertical-align: middle;
-    margin-right: 5px;
-}
+.dp-legend { display: flex; gap: 15px; }
+.dp-legend-item { display: inline-block; width: 15px; height: 15px; border-radius: 3px; vertical-align: middle; margin-right: 5px; }
 .dp-legend .dp-booked { background-color: var(--dp-booked-color); }
 .dp-legend .dp-selected { background-color: var(--dp-selected-color); }
 .dp-legend .dp-unavailable { background-color: var(--dp-unavailable-color); border: 1px solid #ddd; }
 
-
 /* Time Slot Grid */
-.dp-time-slot-grid {
-    overflow-x: auto;
-    border: 1px solid var(--dp-grid-border-color);
-    border-radius: 5px;
-}
+.dp-time-slot-grid { overflow-x: auto; border: 1px solid var(--dp-grid-border-color); border-radius: 5px; }
+.dp-time-slot-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+.dp-time-slot-table th, .dp-time-slot-table td { border: 1px solid var(--dp-grid-border-color); text-align: center; min-width: 80px; }
+.dp-time-slot-table th { background-color: var(--dp-primary-color); color: white; padding: 10px; }
+.dp-time-slot-table .court-name { background-color: #f9f9f9; font-weight: bold; padding: 15px 10px; position: sticky; left: 0; z-index: 1; }
+.time-slot { padding: 15px 10px; cursor: pointer; background-color: #fff; transition: background-color 0.2s; }
+.time-slot.available:hover { background-color: #e9f5ff; }
+.time-slot.selected { background-color: var(--dp-selected-color) !important; color: white; }
+.time-slot.booked { background-color: var(--dp-booked-color); cursor: not-allowed; opacity: 0.7; }
+.time-slot.unavailable { background-color: var(--dp-unavailable-color); cursor: not-allowed; }
+.dp-loader { padding: 50px; text-align: center; font-size: 1.2em; color: #7f8c8d; }
 
-.dp-time-slot-table {
-    width: 100%;
-    border-collapse: collapse;
-    white-space: nowrap;
+/* Summary Panel Styling (Now inside left panel) */
+.dp-summary-panel {
+    background-color: #fdfdfd;
+    border: 1px solid #e9e9e9;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    margin-top:20px;
 }
+.dp-summary-panel h3 { margin-top: 0; color: var(--dp-primary-color); }
+.dp-selection-summary-items { flex-grow: 1; overflow-y: auto; max-height: 250px; /* Limit height and allow scroll */ }
+.dp-summary-placeholder { color: #888; text-align: center; margin-top: 30px; font-style: italic; }
+.dp-summary-item { display: grid; grid-template-areas: "date price" "time delete" "court court"; grid-template-columns: 1fr auto; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9em; }
+.dp-summary-item-date { grid-area: date; font-weight: bold; }
+.dp-summary-item-price { grid-area: price; font-weight: bold; }
+.dp-summary-item-time { grid-area: time; color: #555; }
+.dp-summary-item-court { grid-area: court; color: #777; font-size: 0.9em; }
+.dp-summary-item-delete { grid-area: delete; justify-self: end; cursor: pointer; color: #c0392b; }
+.dp-summary-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #ccc; }
+.dp-summary-total { display: flex; justify-content: space-between; font-size: 1.1em; margin-bottom: 15px; }
+.dp-summary-total strong { color: var(--dp-primary-color); }
+#dp-add-to-cart-btn { width: 100%; padding: 12px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; background-color: var(--dp-primary-color); color: white; }
+#dp-add-to-cart-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-.dp-time-slot-table th,
-.dp-time-slot-table td {
-    border: 1px solid var(--dp-grid-border-color);
-    text-align: center;
-    min-width: 80px;
-}
 
-.dp-time-slot-table th {
-    background-color: var(--dp-primary-color);
-    color: white;
-    padding: 10px;
-}
+/* ==========================================================================
+   Flatpickr Calendar Customization - High Specificity Fix
+   ========================================================================== */
 
-.dp-time-slot-table .court-name {
-    background-color: #f9f9f9;
-    font-weight: bold;
-    padding: 15px 10px;
-    position: sticky;
-    left: 0;
-    z-index: 1;
-}
-
-.time-slot {
-    padding: 15px 10px;
-    cursor: pointer;
-    background-color: #fff;
-    transition: background-color 0.2s;
-}
-
-.time-slot.available:hover {
-    background-color: #e9f5ff;
-}
-
-.time-slot.selected {
-    background-color: var(--dp-selected-color) !important;
-    color: white;
-}
-
-.time-slot.booked {
-    background-color: var(--dp-booked-color);
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.time-slot.unavailable {
-    background-color: var(--dp-unavailable-color);
-    cursor: not-allowed;
-}
-
-.dp-loader {
-    padding: 50px;
-    text-align: center;
-    font-size: 1.2em;
-    color: #7f8c8d;
-}
-
-/* Cart Button */
-.dp-cart-summary {
-    text-align: right;
-    margin-top: 20px;
-}
-
-.dp-button {
-    background-color: var(--dp-primary-color);
-    color: white;
-    padding: 10px 20px;
+/* This hides the original input, as we are showing the calendar inline */
+#dominus-pickleball-app #dp-date-picker {
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
     border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
 }
 
-.dp-button:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
-}
-
-/* Flatpickr Calendar Customization */
-#dp-date-picker {
-    visibility: hidden; /* We use an inline calendar */
-}
-.flatpickr-calendar {
-    box-shadow: none;
+/* Main calendar container styling */
+#dominus-pickleball-app .flatpickr-calendar {
+    box-shadow: none !important;
     width: 100% !important;
+    background-color: transparent !important;
 }
-.flatpickr-day.selected {
-    background: var(--dp-primary-color);
-    border-color: var(--dp-primary-color);
+
+/* Month and navigation arrows */
+#dominus-pickleball-app .flatpickr-month {
+    height: 56px;
+}
+#dominus-pickleball-app .flatpickr-current-month .cur-month {
+    font-size: 1.25em;
+    font-weight: 300;
+}
+#dominus-pickleball-app .flatpickr-prev-month,
+#dominus-pickleball-app .flatpickr-next-month {
+    height: 38px;
+    width: 38px;
+    padding: 8px;
+}
+
+/* Weekday headers (Sun, Mon, Tue...) */
+#dominus-pickleball-app .flatpickr-weekday {
+    font-weight: 500;
+    color: #959ea9;
+}
+
+/* Styling for each individual day */
+#dominus-pickleball-app .flatpickr-day {
+    /* --- This is the key part for the circular design --- */
+    border-radius: 50% !important; /* Force circle shape */
+    border: 1px solid #e0e0e0;
+    height: 38px;
+    width: 38px;
+    line-height: 38px;
+    margin: 1px auto;
+    font-weight: 400;
+    background: transparent;
+    color: #333;
+}
+
+/* Hide border for days not in the current month */
+#dominus-pickleball-app .flatpickr-day.prevMonthDay,
+#dominus-pickleball-app .flatpickr-day.nextMonthDay {
+    border-color: transparent !important;
+    color: #ccc;
+    cursor: default;
+}
+/* Prevent hover effect on out-of-month days */
+#dominus-pickleball-app .flatpickr-day.prevMonthDay:hover,
+#dominus-pickleball-app .flatpickr-day.nextMonthDay:hover {
+    background: transparent !important;
+}
+
+/* Hover effect for valid days */
+#dominus-pickleball-app .flatpickr-day:hover {
+    background: #e9f5ff;
+}
+
+/* Style for today's date */
+#dominus-pickleball-app .flatpickr-day.today {
+    border-color: var(--dp-accent-color); /* Use the blue accent color */
+}
+
+/* Style for the selected date */
+#dominus-pickleball-app .flatpickr-day.selected {
+    background: var(--dp-accent-color) !important;
+    border-color: var(--dp-accent-color) !important;
+    color: #fff !important;
+}
+
+/* Ensure selected date style persists on hover */
+#dominus-pickleball-app .flatpickr-day.selected:hover {
+    background: var(--dp-accent-color) !important;
+    color: #fff !important;
 }
