@@ -17,7 +17,7 @@ class DP_WooCommerce {
         add_action( 'wp_ajax_nopriv_dp_add_slots_to_cart', array( $this, 'add_slots_to_cart' ) );
 
         // Add booking details to cart items
-        add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_booking_meta_to_cart_item' ), 10, 2 );
+        add_filter( 'woocommerce_add_cart_item_data', array( $this, 'add_booking_meta_to_cart_item' ), 10, 3 );
         
         // Display booking details in the cart and checkout
         add_filter( 'woocommerce_get_item_data', array( $this, 'display_booking_meta_in_cart' ), 10, 2 );
@@ -88,9 +88,9 @@ class DP_WooCommerce {
 
     /**
      * Add custom booking data to the cart item.
-     * This is now more robust, using a session to pass data from the AJAX handler.
+     * CORRECTED: The function must accept 3 arguments: $cart_item_data, $product_id, $variation_id
      */
-    public function add_booking_meta_to_cart_item( $cart_item_data, $product_id ) {
+    public function add_booking_meta_to_cart_item( $cart_item_data, $product_id, $variation_id ) {
         if ( isset( $cart_item_data['dp_slot_key'] ) ) {
             $slot_key = $cart_item_data['dp_slot_key'];
             $pending_slots = WC()->session->get('dp_pending_booking_slots');
