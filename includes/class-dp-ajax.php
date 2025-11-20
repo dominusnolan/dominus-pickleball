@@ -36,8 +36,11 @@ class DP_Ajax {
         ));
 
         try {
-            $start_time = new DateTime( $settings['dp_start_time'] );
-            $end_time = new DateTime( $settings['dp_end_time'] );
+            // Define a WordPress timezone object
+            $timezone = new DateTimeZone( get_option('timezone_string') ? get_option('timezone_string') : 'UTC' );
+            
+            $start_time = new DateTime( $settings['dp_start_time'], $timezone );
+            $end_time = new DateTime( $settings['dp_end_time'], $timezone );
             $interval = new DateInterval('PT60M'); // 60 minutes interval
 
             // Generate time headers
@@ -52,13 +55,14 @@ class DP_Ajax {
             $courts = [];
             for ($i = 1; $i <= (int) $settings['dp_number_of_courts']; $i++) {
                 $court_slots = [];
+                $court_name = 'Court ' . $i;
                 foreach ($time_headers as $time) {
-                    $status = $this->get_slot_status($date, $i, $time);
+                    $status = $this->get_slot_status($date, $court_name, $time, $timezone);
                     $court_slots[$time] = ['status' => $status];
                 }
                 $courts[] = [
                     'id' => $i,
-                    'name' => 'Court ' . $i,
+                    'name' => $court_name,
                     'slots' => $court_slots
                 ];
             }
@@ -80,43 +84,58 @@ class DP_Ajax {
     }
     
     /**
-     * Determines the status of a single time slot.
-     * This function should be updated to check actual WooCommerce orders.
+     * Determines the status of a single time slot by checking WooCommerce orders.
      *
      * @param string $date The date of the slot.
-     * @param int $court_id The ID of the court.
+     * @param string $court_name The name of the court.
      * @param string $time The time of the slot.
+     * @param DateTimeZone $timezone The WordPress site timezone.
      * @return string 'available', 'booked', or 'unavailable'.
      */
-    private function get_slot_status($date, $court_id, $time) {
-        // --- REAL IMPLEMENTATION ---
-        // This is where you would query your database or WooCommerce orders
-        // to see if this specific date, court, and time slot is already booked.
-        // For example:
-        // if ( is_slot_in_processing_or_completed_order($date, $court_id, $time) ) {
-        //     return 'booked';
-        // }
-        
-        // --- DEMO IMPLEMENTATION ---
-        // To demonstrate the design, let's make some slots booked based on the image.
-        // The image shows Thu, 20 Nov 2025.
-        if ($date === '2025-11-20') {
-            $demo_booked_slots = [
-                'Court 1' => ['11am', '12pm', '10pm', '11pm'],
-                'Court 2' => ['7am', '8am', '1pm'],
-                'Court 3' => [],
-            ];
-            $court_name = 'Court ' . $court_id;
-            if (isset($demo_booked_slots[$court_name]) && in_array($time, $demo_booked_slots[$court_name])) {
-                return 'unavailable'; // Using 'unavailable' to match the greyed-out look.
+    private function get_slot_status($date, $court_name, $time, $timezone) {
+        // Check if the time is in the past for the given date
+        $now = new DateTime('now', $timezone);
+        // Create slot datetime object with the site's timezone
+        try {
+            $slot_datetime = new DateTime($date . ' ' . $time, $timezone);
+            if ($slot_datetime < $now) {
+                return 'unavailable';
             }
-        }
-        
-        // Check if the time is in the past for today's date
-        $now = new DateTime('now', new DateTimeZone('UTC')); // Or your site's timezone
-        $slot_datetime = new DateTime($date . ' ' . $time, new DateTimeZone('UTC'));
-        if ($slot_datetime < $now) {
+        } catch (Exception $e) {
+            // If the date/time format is invalid, treat as unavailable
             return 'unavailable';
+        }
+
+        // --- REAL IMPLEMENTATION ---
+        // Query WooCommerce for orders with matching booking data.
+        $args = array(
+            'limit' => -1, // Check all orders
+            'status' => array('wc-processing', 'wc-completed'), // Only check paid orders
+            'meta_query' => array(
+                'relation' => 'AND',
+                array(
+                    'key' => 'Date',
+                    'value' => $date,
+                    'compare' => '=',
+                ),
+                array(
+                    'key' => 'Court',
+                    'value' => $court_name,
+                    'compare' => '=',
+                ),
+                array(
+                    'key' => 'Time',
+                    'value' => $time,
+                    'compare' => '=',
+                ),
+            ),
+        );
+
+        $orders = wc_get_orders($args);
+
+        // If any order is found with this slot, it's booked.
+        if ( ! empty($orders) ) {
+            return 'booked';
         }
 
         return 'available';
