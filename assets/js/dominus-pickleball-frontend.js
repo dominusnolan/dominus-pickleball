@@ -13,9 +13,18 @@
         const datePicker = flatpickr("#dp-date-picker", {
             inline: true,
             dateFormat: "Y-m-d",
-            // Use server-provided "today" for both default and minDate
             defaultDate: dp_ajax.today,
-            minDate: dp_ajax.today,
+            minDate: dp_ajax.today, // Keep minDate for navigation boundaries
+            // Add a disable function for robustly disabling past dates
+            disable: [
+                function(date) {
+                    // Disable all dates before the server-provided 'today'
+                    // The 'YYYY-MM-DD' format ensures a correct string comparison.
+                    const todayStr = dp_ajax.today; 
+                    const dateStr = date.getFullYear() + "-" + ("0" + (date.getMonth() + 1)).slice(-2) + "-" + ("0" + date.getDate()).slice(-2);
+                    return dateStr < todayStr;
+                }
+            ],
             onChange: function(selectedDates, dateStr, instance) {
                 if (selectedDates.length > 0) {
                     state.selectedDate = dateStr;
@@ -24,22 +33,11 @@
                 }
             },
         });
-        
-        // This function must be defined before it is called
+
         function updateSelectedDateDisplay(date) {
             const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
             $('#dp-selected-date').text(date.toLocaleDateString('en-US', options));
         }
-
-        // Corrected Initial Load
-        // Ensure the initial state is set after the flatpickr instance is created.
-        if (datePicker.selectedDates.length > 0) {
-            const initialDate = datePicker.selectedDates[0];
-            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
-            updateSelectedDateDisplay(initialDate);
-            fetchTimeSlots(state.selectedDate);
-        }
-
 
         function fetchTimeSlots(date) {
             const grid = $('#dp-time-slot-grid');
@@ -196,6 +194,14 @@
 
             // The form will now submit naturally.
         });
+
+        // Initial load. Run after flatpickr is initialized.
+        if (datePicker.selectedDates.length > 0) {
+            const initialDate = datePicker.selectedDates[0];
+            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
+            updateSelectedDateDisplay(initialDate);
+            fetchTimeSlots(state.selectedDate);
+        }
     });
 
 })(jQuery, flatpickr, dp_ajax);
