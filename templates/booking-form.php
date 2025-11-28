@@ -142,7 +142,7 @@ if ( ! defined( 'WPINC' ) ) {
 
 .flatpickr-innerContainer{ margin:0 auto; display:block  }
 
-.dp-summary-item-delete{ font-size: 20px;margin-top: 10px;  }
+.dp-summary-item-delete{ font-size: 20px;margin-top: 10px; background: none; border: none; cursor: pointer; padding: 0; }
 
 /* Login to Book button styles */
 #dp-login-to-book-btn {
@@ -424,7 +424,7 @@ if ( ! defined( 'WPINC' ) ) {
                 '<span class="dp-summary-item-date">' + formattedDate + '</span>' +
                 '<span class="dp-summary-item-price">' + currencySymbol + price.toFixed(2) + '</span>' +
                 '<span class="dp-summary-item-time">' + group.timeRange + '</span>' +
-                '<span class="dp-summary-item-delete" data-range-key="' + group.key + '" title="Remove selection">🗑️</span>' +
+                '<button type="button" class="dp-summary-item-delete" data-range-key="' + group.key + '" aria-label="Remove ' + group.timeRange + ' booking for ' + group.courtName + '">🗑️</button>' +
                 '<span class="dp-summary-item-court">' + group.courtName + '</span>' +
                 '</div>';
 
@@ -451,12 +451,11 @@ if ( ! defined( 'WPINC' ) ) {
         var groupToDelete = contiguousGroups.find(function(g) { return g.key === rangeKey; });
 
         if (groupToDelete) {
-            // Remove selection from DOM slots
+            // Remove selection from DOM slots and sync with external JS state
             groupToDelete.slots.forEach(function(slot) {
                 var slotEl = document.querySelector('.time-slot[data-slot-id="' + slot.id + '"]');
-                if (slotEl) {
-                    slotEl.classList.remove('selected');
-                    // Trigger click to sync with external JS state
+                if (slotEl && slotEl.classList.contains('selected')) {
+                    // Click to deselect - external JS handles the click event to update its state
                     slotEl.click();
                 }
             });
@@ -477,9 +476,24 @@ if ( ! defined( 'WPINC' ) ) {
         summaryObserver = new MutationObserver(function(mutations) {
             if (isUpdatingSummary) return;
 
-            // Check if there are actual content changes (not just our own updates)
+            // Check if there are actual summary item changes from external JS (not our own updates)
             var hasRelevantChanges = mutations.some(function(m) {
-                return m.type === 'childList' && m.addedNodes.length > 0;
+                if (m.type !== 'childList' || m.addedNodes.length === 0) return false;
+                // Check if added nodes include summary items with data-group-key (from external JS)
+                // Our items use data-range-key, external JS uses data-group-key
+                for (var i = 0; i < m.addedNodes.length; i++) {
+                    var node = m.addedNodes[i];
+                    if (node.nodeType === 1) { // Element node
+                        if (node.classList && node.classList.contains('dp-summary-item') && node.hasAttribute('data-group-key')) {
+                            return true;
+                        }
+                        // Also check for placeholder text which indicates external JS cleared the summary
+                        if (node.classList && node.classList.contains('dp-summary-placeholder')) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
             });
 
             if (hasRelevantChanges) {
