@@ -49,7 +49,6 @@ if ( ! defined( 'WPINC' ) ) {
                 <span class="dp-legend-item dp-booked"></span> Booked
                 <span class="dp-legend-item dp-selected"></span> Selected
                 <span class="dp-legend-item dp-unavailable"></span> Unavailable
-                <span class="dp-legend-item dp-reserved-reclub" style="background-color:#fee2e2;border:1px solid #dc2626;"></span> Reserved for Reclub
             </div>
             <!-- TEXT MOVED HERE -->
             <div class="dp-content" style="margin-top:20px">
@@ -112,22 +111,7 @@ if ( ! defined( 'WPINC' ) ) {
     }
 }
 
-/* Inline styles for reserved_reclub slots - bypass static asset caching */
-.time-slot.reserved_reclub {
-    background-color: #fee2e2 !important;
-    cursor: not-allowed !important;
-    pointer-events: none;
-    position: relative;
-}
-.time-slot.reserved_reclub .dp-reclub-label {
-    display: block;
-    color: #dc2626;
-    font-weight: bold;
-    font-size: 11px;
-    line-height: 1.2;
-    white-space: normal;
-    word-wrap: break-word;
-}
+
 </style>
 
 <script>
@@ -168,59 +152,7 @@ if ( ! defined( 'WPINC' ) ) {
         updateSummarySticky();
     }
 
-    // Inline handler for reserved_reclub slots - bypass static asset caching
-    function handleReservedReclubSlots() {
-        var slots = document.querySelectorAll('.time-slot.reserved_reclub');
-        slots.forEach(function(slot) {
-            // Skip if already processed
-            if (slot.querySelector('.dp-reclub-label')) {
-                return;
-            }
-            // Clear existing text content and add accessible label
-            // Note: slot metadata (court, time, date) is preserved in data attributes
-            slot.textContent = '';
-            var label = document.createElement('span');
-            label.className = 'dp-reclub-label';
-            label.textContent = 'Reserved for Reclub';
-            label.setAttribute('aria-label', 'This slot is reserved for Reclub and cannot be selected');
-            slot.appendChild(label);
-            // Remove available class if present and ensure not selectable
-            slot.classList.remove('available');
-            slot.setAttribute('aria-disabled', 'true');
-            slot.setAttribute('role', 'cell');
-        });
-    }
-
-    // Observe DOM changes for dynamically loaded slots (after AJAX)
-    var grid = document.getElementById('dp-time-slot-grid');
-    if (grid) {
-        var debounceTimer = null;
-        var observer = new MutationObserver(function(mutations) {
-            // Debounce to avoid excessive calls during rapid DOM updates
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
-            }
-            debounceTimer = setTimeout(handleReservedReclubSlots, 10);
-        });
-        observer.observe(grid, { childList: true, subtree: true });
-
-        // Block click events on reserved_reclub slots within the grid only
-        grid.addEventListener('click', function(e) {
-            var slot = e.target.closest('.time-slot.reserved_reclub');
-            if (slot) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        }, true);
-    }
-
-    // Run on initial load as well
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', handleReservedReclubSlots);
-    } else {
-        handleReservedReclubSlots();
-    }
+   
 })();
 </script>
 
