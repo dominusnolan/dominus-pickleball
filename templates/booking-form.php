@@ -81,21 +81,24 @@ if ( ! defined( 'WPINC' ) ) {
                         <?php // Nextend Social Login - Apple ?>
                         <?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
                             <div class="dp-social-login-option">
-                                <?php echo do_shortcode( '[nextend_social_login provider="apple"]' ); ?>
+                                <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="apple"]' ) ); ?>
                             </div>
                             <div class="dp-social-login-option">
-                                <?php echo do_shortcode( '[nextend_social_login provider="phone"]' ); ?>
+                                <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="phone"]' ) ); ?>
                             </div>
                             <div class="dp-social-login-option">
-                                <?php echo do_shortcode( '[nextend_social_login provider="email"]' ); ?>
+                                <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="email"]' ) ); ?>
                             </div>
                         <?php else : ?>
                             <p class="dp-social-login-unavailable">Social login is currently unavailable. Please try again later.</p>
                         <?php endif; ?>
                     </div>
                     
-                    <?php // Only show WooCommerce forms if registration is enabled ?>
-                    <?php if ( class_exists( 'WooCommerce' ) && get_option( 'woocommerce_enable_myaccount_registration' ) === 'yes' ) : ?>
+                    <?php 
+                    // Only show WooCommerce forms if registration is enabled
+                    $wc_registration_enabled = class_exists( 'WooCommerce' ) && get_option( 'woocommerce_enable_myaccount_registration' ) === 'yes';
+                    ?>
+                    <?php if ( $wc_registration_enabled ) : ?>
                     <div class="dp-woocommerce-forms">
                         <div class="dp-form-login">
                             <h3>Or login with your account</h3>
@@ -252,37 +255,47 @@ if ( ! defined( 'WPINC' ) ) {
     function initLoginModal() {
         var loginBtn = document.getElementById('dp-login-to-book-btn');
         var modal = document.getElementById('dp-login-modal');
-        var closeBtn = modal ? modal.querySelector('.dp-modal-close') : null;
+        
+        if (!loginBtn || !modal) {
+            return; // Exit if elements don't exist (user may be logged in)
+        }
+        
+        var closeBtn = modal.querySelector('.dp-modal-close');
 
-        if (loginBtn && modal) {
-            // Open modal on Login to Book button click
-            loginBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                modal.style.display = 'block';
-            });
+        // Event handlers stored for cleanup
+        function openModal(e) {
+            e.preventDefault();
+            modal.style.display = 'block';
+            // Add event listeners when modal opens
+            document.addEventListener('keydown', handleEscapeKey);
+            window.addEventListener('click', handleOutsideClick);
         }
 
-        if (closeBtn && modal) {
-            // Close modal on close button click
-            closeBtn.addEventListener('click', function() {
-                modal.style.display = 'none';
-            });
+        function closeModal() {
+            modal.style.display = 'none';
+            // Remove event listeners when modal closes
+            document.removeEventListener('keydown', handleEscapeKey);
+            window.removeEventListener('click', handleOutsideClick);
         }
 
-        if (modal) {
-            // Close modal when clicking outside the modal content
-            window.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    modal.style.display = 'none';
-                }
-            });
+        function handleEscapeKey(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        }
 
-            // Close modal on Escape key press
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal.style.display === 'block') {
-                    modal.style.display = 'none';
-                }
-            });
+        function handleOutsideClick(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Open modal on Login to Book button click
+        loginBtn.addEventListener('click', openModal);
+
+        // Close modal on close button click
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
         }
     }
 
