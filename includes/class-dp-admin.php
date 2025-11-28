@@ -197,7 +197,11 @@ class DP_Admin {
         $start_time = '';
         $end_time = '';
         if ( ! empty( $value ) && strpos( $value, '-' ) !== false ) {
-            list( $start_time, $end_time ) = explode( '-', $value );
+            $parts = explode( '-', $value, 2 );
+            if ( count( $parts ) === 2 ) {
+                $start_time = $parts[0];
+                $end_time = $parts[1];
+            }
         }
         
         $time_options = $this->get_time_options();
