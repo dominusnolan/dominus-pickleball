@@ -89,4 +89,67 @@ if ( ! defined( 'WPINC' ) ) {
     <?php wp_nonce_field( 'dp_add_slots_to_cart_action', 'dp_add_slots_nonce' ); ?>
     <input type="hidden" name="action" value="dp_add_slots_to_cart_form">
     <div id="dp-hidden-slots-container"></div>
+
+<style>
+/* Inline sticky summary styles to avoid static asset caching */
+@media (max-width: 768px) {
+    .dp-summary-panel.dp-summary-sticky {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-radius: 0;
+        margin: 0;
+        padding: 1em;
+        z-index: 1000;
+    }
+    .dp-summary-sticky-offset {
+        padding-top: 160px;
+    }
+}
+</style>
+
+<script>
+(function() {
+    // Inline sticky summary behavior to avoid static asset caching
+    function updateSummarySticky() {
+        var summary = document.querySelector('.dp-summary-panel');
+        var container = document.querySelector('.dp-container');
+        if (!summary || !container) {
+            return;
+        }
+        if (window.innerWidth > 768) {
+            summary.classList.remove('dp-summary-sticky');
+            container.classList.remove('dp-summary-sticky-offset');
+            return;
+        }
+        var selected = document.querySelectorAll('.time-slot.selected');
+        if (selected.length > 0) {
+            summary.classList.add('dp-summary-sticky');
+            container.classList.add('dp-summary-sticky-offset');
+        } else {
+            summary.classList.remove('dp-summary-sticky');
+            container.classList.remove('dp-summary-sticky-offset');
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('time-slot') || e.target.classList.contains('dp-summary-item-delete')) {
+            setTimeout(updateSummarySticky, 50);
+        }
+    });
+
+    window.addEventListener('resize', updateSummarySticky);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateSummarySticky);
+    } else {
+        updateSummarySticky();
+    }
+})();
+</script>
+
 </form>
