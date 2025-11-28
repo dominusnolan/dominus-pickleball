@@ -564,42 +564,6 @@ if ( ! defined( 'WPINC' ) ) {
 
 <script>
 (function() {
-    // Inline sticky summary behavior to avoid static asset caching
-    function updateSummarySticky() {
-        var summary = document.querySelector('.dp-summary-panel');
-        var container = document.querySelector('.dp-container');
-        if (!summary || !container) {
-            return;
-        }
-        if (window.innerWidth > 768) {
-            summary.classList.remove('dp-summary-sticky');
-            container.classList.remove('dp-summary-sticky-offset');
-            return;
-        }
-        var selected = document.querySelectorAll('.time-slot.selected');
-        if (selected.length > 0) {
-            summary.classList.add('dp-summary-sticky');
-            container.classList.add('dp-summary-sticky-offset');
-        } else {
-            summary.classList.remove('dp-summary-sticky');
-            container.classList.remove('dp-summary-sticky-offset');
-        }
-    }
-
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('time-slot') || e.target.classList.contains('dp-summary-item-delete')) {
-            setTimeout(updateSummarySticky, 50);
-        }
-    });
-
-    window.addEventListener('resize', updateSummarySticky);
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateSummarySticky);
-    } else {
-        updateSummarySticky();
-    }
-
     // Login Modal functionality
     function initLoginModal() {
         var loginBtn = document.getElementById('dp-login-to-book-btn');
