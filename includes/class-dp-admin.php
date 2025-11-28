@@ -18,6 +18,15 @@ class DP_Admin {
     }
 
     /**
+     * Get the days of the week.
+     *
+     * @return array
+     */
+    private function get_days_of_week() {
+        return array( 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' );
+    }
+
+    /**
      * Add the admin menu page.
      */
     public function add_admin_menu() {
@@ -80,6 +89,35 @@ class DP_Admin {
             'dp_general_settings_section',
             [ 'id' => 'dp_slot_price', 'default' => '20.00' ]
         );
+
+        // Blocked Time Ranges Section
+        add_settings_section(
+            'dp_blocked_times_section',
+            __( 'Blocked Time Ranges', 'dominus-pickleball' ),
+            null,
+            'dominus-pickleball'
+        );
+
+        $day_labels = array(
+            'monday'    => __( 'Monday', 'dominus-pickleball' ),
+            'tuesday'   => __( 'Tuesday', 'dominus-pickleball' ),
+            'wednesday' => __( 'Wednesday', 'dominus-pickleball' ),
+            'thursday'  => __( 'Thursday', 'dominus-pickleball' ),
+            'friday'    => __( 'Friday', 'dominus-pickleball' ),
+            'saturday'  => __( 'Saturday', 'dominus-pickleball' ),
+            'sunday'    => __( 'Sunday', 'dominus-pickleball' ),
+        );
+
+        foreach ( $this->get_days_of_week() as $day_key ) {
+            add_settings_field(
+                'dp_blocked_times_' . $day_key,
+                $day_labels[ $day_key ],
+                array( $this, 'render_blocked_time_field' ),
+                'dominus-pickleball',
+                'dp_blocked_times_section',
+                [ 'id' => 'dp_blocked_times_' . $day_key, 'default' => '' ]
+            );
+        }
     }
 
     /**
@@ -131,6 +169,15 @@ class DP_Admin {
     }
 
     /**
+     * Render a blocked time range input field.
+     */
+    public function render_blocked_time_field( $args ) {
+        $options = get_option( 'dp_settings' );
+        $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
+        echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" value="' . esc_attr( $value ) . '" placeholder="07:00-09:00" />';
+    }
+
+    /**
      * Sanitize settings fields.
      */
     public function sanitize_settings( $input ) {
@@ -139,6 +186,12 @@ class DP_Admin {
         $sanitized_input['dp_start_time'] = isset( $input['dp_start_time'] ) ? sanitize_text_field( $input['dp_start_time'] ) : '07:00';
         $sanitized_input['dp_end_time'] = isset( $input['dp_end_time'] ) ? sanitize_text_field( $input['dp_end_time'] ) : '23:00';
         $sanitized_input['dp_slot_price'] = isset( $input['dp_slot_price'] ) ? sanitize_text_field( $input['dp_slot_price'] ) : '20.00';
+        
+        // Sanitize blocked time ranges for each day of the week
+        foreach ( $this->get_days_of_week() as $day ) {
+            $key = 'dp_blocked_times_' . $day;
+            $sanitized_input[ $key ] = isset( $input[ $key ] ) ? sanitize_text_field( $input[ $key ] ) : '';
+        }
         
         return $sanitized_input;
     }
