@@ -118,6 +118,349 @@ if ( ! defined( 'WPINC' ) ) {
     <div id="dp-hidden-slots-container"></div>
 
 <style>
+/**
+ * Frontend CSS for Dominus Pickleball Booking Plugin - Updated for 2-column Layout
+ * Inlined to bypass static asset caching
+ */
+
+:root {
+    --dp-primary-color: #2c3e50;
+    --dp-secondary-color: #34495e;
+    --dp-accent-color: #3498db;
+    --dp-background-color: #ffffff;
+    --dp-grid-border-color: #ecf0f1;
+    --dp-unavailable-color: #f0f0f0;
+    --dp-booked-color: #27ae60;
+    --dp-selected-color: #2980b9;
+    --dp-text-color: #333;
+    --dp-font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Main Container - Back to 2-column Flex */
+.dp-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping on smaller screens */
+    font-family: var(--dp-font-family);
+    background-color: var(--dp-background-color);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    margin: 20px auto;
+    gap: 20px;
+}
+
+/* Left Panel - Calendar, Info, and Summary */
+.dp-left-panel {
+    flex: 1;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.dp-header h2 {
+    color: var(--dp-primary-color);
+    margin-top: 0;
+}
+
+.dp-header p {
+    color: #7f8c8d;
+    margin: 5px 0;
+}
+
+/* Right Panel - Time Slots */
+.dp-right-panel {
+    flex: 2; /* Takes more space */
+    min-width: 600px;
+}
+
+.dp-booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.dp-booking-header h3 {
+    color: var(--dp-primary-color);
+    margin: 0;
+}
+
+/* Legend */
+.dp-legend { display: flex; gap: 15px; margin-top: 30px !important;}
+.dp-legend-item { display: inline-block; width: 15px; height: 15px; border-radius: 3px; vertical-align: middle; margin-right: 5px; }
+.dp-legend .dp-booked { background-color: var(--dp-booked-color); }
+.dp-legend .dp-selected { background-color: var(--dp-selected-color); }
+.dp-legend .dp-unavailable { background-color: var(--dp-unavailable-color); border: 1px solid #ddd; }
+
+/* Time Slot Grid */
+.dp-time-slot-grid { overflow-x: auto; border: 1px solid var(--dp-grid-border-color); border-radius: 5px; }
+.dp-time-slot-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+.dp-time-slot-table th, .dp-time-slot-table td { border: 1px solid var(--dp-grid-border-color); text-align: center; min-width: 80px; }
+.dp-time-slot-table th { background-color: var(--dp-primary-color); color: white; padding: 10px; }
+.dp-time-slot-table .court-name { background-color: #f9f9f9; font-weight: bold; padding: 15px 10px; position: sticky; left: 0; z-index: 1; }
+.time-slot { padding: 15px 10px; cursor: pointer; background-color: #fff; transition: background-color 0.2s; }
+.time-slot.available:hover { background-color: #e9f5ff; }
+.time-slot.selected { background-color: var(--dp-selected-color) !important; color: white; }
+.time-slot.booked { background-color: var(--dp-booked-color); cursor: not-allowed; opacity: 0.7; color: #FFF !important }
+.time-slot.unavailable { background-color: var(--dp-unavailable-color); cursor: not-allowed; }
+.dp-loader { padding: 50px; text-align: center; font-size: 1.2em; color: #7f8c8d; }
+
+/* Summary Panel Styling (Now inside left panel) */
+.dp-summary-panel {
+    background-color: #fdfdfd;
+    border: 1px solid #e9e9e9;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    margin-top:20px;
+}
+.dp-summary-panel h3 { margin-top: 0; color: var(--dp-primary-color); }
+.dp-selection-summary-items { flex-grow: 1; overflow-y: auto; max-height: 250px; /* Limit height and allow scroll */ }
+.dp-summary-placeholder { color: #888; text-align: center; margin-top: 30px; font-style: italic; }
+.dp-summary-item { display: grid; grid-template-areas: "date price" "time delete" "court court"; grid-template-columns: 1fr auto; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9em; }
+.dp-summary-item-date { grid-area: date; font-weight: bold; }
+.dp-summary-item-price { grid-area: price; font-weight: bold; }
+.dp-summary-item-time { grid-area: time; color: #555; }
+.dp-summary-item-court { grid-area: court; color: #777; font-size: 0.9em; }
+.dp-summary-item-delete { grid-area: delete; justify-self: end; cursor: pointer; color: #c0392b; }
+.dp-summary-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #ccc; }
+.dp-summary-total { display: flex; justify-content: space-between; font-size: 1.1em; margin-bottom: 15px; }
+.dp-summary-total strong { color: var(--dp-primary-color); }
+#dp-add-to-cart-btn { width: 100%; padding: 12px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; background-color: var(--dp-primary-color); color: white; }
+#dp-add-to-cart-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+
+/* ==========================================================================
+   Flatpickr Calendar Customization - High Specificity Fix
+   ========================================================================== */
+
+/* This hides the original input, as we are showing the calendar inline */
+#dominus-pickleball-app #dp-date-picker {
+    visibility: hidden;
+    height: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+/* Main calendar container styling */
+#dominus-pickleball-app .flatpickr-calendar {
+    box-shadow: none !important;
+    width: 100% !important;
+    background-color: transparent !important;
+}
+
+/* Month and navigation arrows */
+#dominus-pickleball-app .flatpickr-month {
+    height: 56px;
+}
+#dominus-pickleball-app .flatpickr-current-month .cur-month {
+    font-size: 1.25em;
+    font-weight: 300;
+}
+#dominus-pickleball-app .flatpickr-prev-month,
+#dominus-pickleball-app .flatpickr-next-month {
+    height: 38px;
+    width: 38px;
+    padding: 8px;
+}
+
+/* Weekday headers (Sun, Mon, Tue...) */
+#dominus-pickleball-app .flatpickr-weekday {
+    font-weight: 500;
+    color: #959ea9;
+}
+
+/* Styling for each individual day */
+#dominus-pickleball-app .flatpickr-day {
+    border-radius: 50% !important;
+    border: 1px solid #e0e0e0;
+    height: 38px;
+    width: 38px;
+    line-height: 38px;
+    margin: 1px auto;
+    font-weight: 400;
+    background: transparent;
+    color: #333;
+}
+
+/* Disabled past days: make them visibly disabled and un-clickable */
+#dominus-pickleball-app .flatpickr-day.flatpickr-disabled,
+#dominus-pickleball-app .flatpickr-day.disabled,
+#dominus-pickleball-app .flatpickr-day[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: not-allowed !important;
+    color: #bbb !important;
+    background: transparent !important;
+    border-color: #e0e0e0 !important;
+}
+#dominus-pickleball-app .flatpickr-day.flatpickr-disabled:hover,
+#dominus-pickleball-app .flatpickr-day.disabled:hover,
+#dominus-pickleball-app .flatpickr-day[aria-disabled="true"]:hover {
+    background: transparent !important;
+}
+
+
+/* Hide border for days not in the current month */
+#dominus-pickleball-app .flatpickr-day.prevMonthDay,
+#dominus-pickleball-app .flatpickr-day.nextMonthDay {
+    border-color: transparent !important;
+    color: #ccc;
+    cursor: default;
+}
+/* Prevent hover effect on out-of-month days */
+#dominus-pickleball-app .flatpickr-day.prevMonthDay:hover,
+#dominus-pickleball-app .flatpickr-day.nextMonthDay:hover {
+    background: transparent !important;
+}
+
+/* Hover effect for valid days */
+#dominus-pickleball-app .flatpickr-day:not(.flatpickr-disabled):not(.disabled):not([aria-disabled="true"]):hover {
+    background: #e9f5ff;
+}
+
+/* Style for today's date */
+#dominus-pickleball-app .flatpickr-day.today {
+    border-color: var(--dp-accent-color);
+}
+#dominus-pickleball-app .flatpickr-day.today:not(.selected) {
+    color: var(--dp-accent-color);
+}
+
+/* Style for the selected date */
+#dominus-pickleball-app .flatpickr-day.selected {
+    background: var(--dp-accent-color) !important;
+    border-color: var(--dp-accent-color) !important;
+    color: #fff !important;
+}
+
+/* Ensure selected date style persists on hover */
+#dominus-pickleball-app .flatpickr-day.selected:hover {
+    background: var(--dp-accent-color) !important;
+    color: #fff !important;
+}
+
+/* ==========================================================================
+   Login/Sign-up Modal
+   ========================================================================== */
+
+.dp-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0,0,0,0.6);
+}
+
+.dp-modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 800px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.dp-modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+
+.dp-modal-close:hover,
+.dp-modal-close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dp-woocommerce-forms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+}
+.dp-woocommerce-forms > div {
+    flex: 1;
+    min-width: 280px;
+}
+
+.dp-woocommerce-forms h2 {
+    margin-top: 0;
+    color: var(--dp-primary-color);
+}
+
+
+/* ===== Mobile Layout Improvements ===== */
+@media (max-width: 768px) {
+    .dp-container {
+        flex-direction: column;
+        gap: 0;
+        padding: 10px;
+    }
+    .dp-left-panel,
+    .dp-right-panel {
+        min-width: 0;
+        width: 100%;
+        padding: 0;
+    }
+    .dp-right-panel {
+        margin-top: 30px;
+    }
+    .dp-booking-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .dp-legend {
+        margin: 24px 0 0 0;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 0.95em;
+        
+    }
+    .dp-content {
+        margin-top: 24px !important;
+        font-size: 1em;
+        word-break: break-word;
+    }
+    .dp-time-slot-table th, .dp-time-slot-table td {
+        min-width: 60px;
+        font-size: 0.95em;
+        padding: 6px 2px;
+    }
+    /* Sticky Summary Panel */
+    .dp-summary-panel.dp-summary-sticky {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-radius: 0;
+        margin: 0;
+        padding: 1em;
+        z-index: 1000;
+    }
+    .dp-summary-sticky-offset {
+        padding-top: 160px; /* Adjust to summary panel height */
+    }
+}
+</style>
+
+<style>
 /* Inline sticky summary styles to avoid static asset caching */
 @media (max-width: 768px) {
     .dp-summary-panel.dp-summary-sticky {
@@ -221,42 +564,6 @@ if ( ! defined( 'WPINC' ) ) {
 
 <script>
 (function() {
-    // Inline sticky summary behavior to avoid static asset caching
-    function updateSummarySticky() {
-        var summary = document.querySelector('.dp-summary-panel');
-        var container = document.querySelector('.dp-container');
-        if (!summary || !container) {
-            return;
-        }
-        if (window.innerWidth > 768) {
-            summary.classList.remove('dp-summary-sticky');
-            container.classList.remove('dp-summary-sticky-offset');
-            return;
-        }
-        var selected = document.querySelectorAll('.time-slot.selected');
-        if (selected.length > 0) {
-            summary.classList.add('dp-summary-sticky');
-            container.classList.add('dp-summary-sticky-offset');
-        } else {
-            summary.classList.remove('dp-summary-sticky');
-            container.classList.remove('dp-summary-sticky-offset');
-        }
-    }
-
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('time-slot') || e.target.classList.contains('dp-summary-item-delete')) {
-            setTimeout(updateSummarySticky, 50);
-        }
-    });
-
-    window.addEventListener('resize', updateSummarySticky);
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateSummarySticky);
-    } else {
-        updateSummarySticky();
-    }
-
     // Login Modal functionality
     function initLoginModal() {
         var loginBtn = document.getElementById('dp-login-to-book-btn');
@@ -313,6 +620,276 @@ if ( ! defined( 'WPINC' ) ) {
 
    
 })();
+</script>
+
+<?php
+// Output the dp_ajax object for the inline booking script
+$dp_ajax_data = array(
+    'ajax_url'          => admin_url( 'admin-ajax.php' ),
+    'nonce'             => wp_create_nonce( 'dp_booking_nonce' ),
+    'is_user_logged_in' => is_user_logged_in(),
+    'today'             => current_time( 'Y-m-d' ),
+);
+?>
+<script>
+var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
+</script>
+
+<script>
+/**
+ * Dominus Pickleball Frontend Booking Script
+ * Inlined to bypass static asset caching
+ */
+(function($, flatpickr, dp_ajax) {
+    'use strict';
+
+    $(function() {
+
+        // Defensive: Use server date if available, fallback to today
+        var serverToday = (
+            dp_ajax && dp_ajax.today
+                ? dp_ajax.today
+                : (new Date()).toISOString().split('T')[0]
+        );
+
+        const state = {
+            selectedDate: null,
+            selectedSlots: [],
+            pricePerSlot: 0, // This will be fetched from backend
+            currencySymbol: '₱', // Default currency symbol
+        };
+
+        // Initialize Flatpickr with server-provided today, disable past dates robustly
+        const datePicker = flatpickr("#dp-date-picker", {
+            inline: true,
+            dateFormat: "Y-m-d",
+            defaultDate: serverToday,
+            minDate: serverToday,
+            disable: [
+                function(date) {
+                    if (!serverToday) return false;
+                    // Use local timezone for both; set hours to midnight
+                    const todayParts = serverToday.split('-');
+                    const today = new Date(todayParts[0], todayParts[1] - 1, todayParts[2]);
+                    today.setHours(0,0,0,0);
+
+                    date.setHours(0,0,0,0);
+
+                    return date < today;
+                }
+            ],
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    state.selectedDate = dateStr;
+                    updateSelectedDateDisplay(selectedDates[0]);
+                    fetchTimeSlots(dateStr);
+                }
+            },
+        });
+
+        function updateSelectedDateDisplay(date) {
+            const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
+            $('#dp-selected-date').text(date.toLocaleDateString('en-US', options));
+        }
+
+        function fetchTimeSlots(date) {
+            const grid = $('#dp-time-slot-grid');
+            grid.html('<div class="dp-loader">Loading...</div>');
+
+            $.ajax({
+                url: dp_ajax.ajax_url,
+                type: 'POST',
+                data: { action: 'dp_get_time_slots', nonce: dp_ajax.nonce, date: date },
+                success: function(response) {
+                    if (response.success) {
+                        state.pricePerSlot = parseFloat(response.data.price_per_slot);
+                        state.currencySymbol = response.data.currency_symbol;
+                        renderTimeSlotGrid(response.data);
+                    } else {
+                        grid.html('<div class="dp-loader">' + response.data.message + '</div>');
+                    }
+                },
+                error: function() {
+                    grid.html('<div class="dp-loader">An error occurred. Please try again.</div>');
+                }
+            });
+        }
+
+        function renderTimeSlotGrid(data) {
+            const grid = $('#dp-time-slot-grid');
+            grid.empty();
+            let table = '<table class="dp-time-slot-table"><thead><tr><th> </th>';
+            data.time_headers.forEach(header => { table += '<th>' + header + '</th>'; });
+            table += '</tr></thead><tbody>';
+            data.courts.forEach(court => {
+                table += '<tr><td class="court-name">' + court.name + '</td>';
+                data.time_headers.forEach(time => {
+                    const slotInfo = court.slots[time];
+                    let classes = 'time-slot ' + slotInfo.status;
+                    const slotId = state.selectedDate + '_' + court.id + '_' + time;
+                    if (state.selectedSlots.find(s => s.id === slotId)) {
+                        classes += ' selected';
+                    }
+                    table += '<td class="' + classes + '" data-slot-id="' + slotId + '" data-court-id="' + court.id + '" data-court-name="' + court.name + '" data-time="' + time + '">' + time + '</td>';
+                });
+                table += '</tr>';
+            });
+            table += '</tbody></table>';
+            grid.html(table);
+        }
+
+        $('#dp-time-slot-grid').on('click', '.time-slot.available', function() {
+            const slot = $(this);
+            const slotId = slot.data('slot-id');
+            const index = state.selectedSlots.findIndex(s => s.id === slotId);
+
+            if (index > -1) {
+                state.selectedSlots.splice(index, 1);
+            } else {
+                state.selectedSlots.push({
+                    id: slotId,
+                    courtId: slot.data('court-id'),
+                    courtName: slot.data('court-name'),
+                    time: slot.data('time'),
+                    date: state.selectedDate,
+                    hour: parseInt(slot.data('time').match(/(\d+)/)[0]) + (slot.data('time').includes('pm') && !slot.data('time').includes('12pm') ? 12 : 0)
+                });
+            }
+            slot.toggleClass('selected');
+            updateSummaryView();
+        });
+
+        function updateSummaryView() {
+            const summaryContainer = $('#dp-selection-summary-items');
+            summaryContainer.empty();
+
+            if (state.selectedSlots.length === 0) {
+                summaryContainer.html('<p class="dp-summary-placeholder">Your selected slots will appear here.</p>');
+                $('#dp-add-to-cart-btn').prop('disabled', true);
+                $('#dp-summary-total-price').html(state.currencySymbol + '0.00');
+                return;
+            }
+
+            const groupedSlots = groupConsecutiveSlots(state.selectedSlots);
+            let total = 0;
+
+            Object.values(groupedSlots).forEach(group => {
+                const price = group.slots.length * state.pricePerSlot;
+                total += price;
+                const formattedDate = new Date(group.date.replace(/-/g, '/') + ' 00:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+
+                const itemHtml = '<div class="dp-summary-item">' +
+                    '<span class="dp-summary-item-date">' + formattedDate + '</span>' +
+                    '<span class="dp-summary-item-price">' + state.currencySymbol + price.toFixed(2) + '</span>' +
+                    '<span class="dp-summary-item-time">' + group.timeRange + '</span>' +
+                    '<span class="dp-summary-item-delete" data-group-key="' + group.key + '" title="Remove selection">🗑️</span>' +
+                    '<span class="dp-summary-item-court">' + group.courtName + '</span>' +
+                    '</div>';
+                summaryContainer.append(itemHtml);
+            });
+
+            $('#dp-summary-total-price').html(state.currencySymbol + total.toFixed(2));
+            $('#dp-add-to-cart-btn').prop('disabled', false);
+        }
+
+        function groupConsecutiveSlots(slots) {
+            const sorted = [...slots].sort((a, b) => a.courtId - b.courtId || a.hour - b.hour);
+            const groups = {};
+            sorted.forEach(slot => {
+                const key = slot.date + '_' + slot.courtId;
+                if (!groups[key]) {
+                    groups[key] = { key: key, date: slot.date, courtName: slot.courtName, slots: [] };
+                }
+                groups[key].slots.push(slot);
+            });
+
+            Object.values(groups).forEach(group => {
+                const startTime = group.slots[0].time;
+                const endTimeHour = group.slots[group.slots.length - 1].hour + 1;
+                const endSuffix = endTimeHour >= 12 ? 'pm' : 'am';
+                const formattedEndHour = endTimeHour > 12 ? endTimeHour - 12 : (endTimeHour === 0 ? 12 : endTimeHour);
+                const endTime = formattedEndHour + endSuffix;
+                group.timeRange = startTime + ' - ' + endTime;
+            });
+            return groups;
+        }
+
+        $('#dp-selection-summary-items').on('click', '.dp-summary-item-delete', function() {
+            const groupKey = $(this).data('group-key');
+            const slotsToRemove = groupConsecutiveSlots(state.selectedSlots)[groupKey].slots;
+            
+            slotsToRemove.forEach(slotToRemove => {
+                $('.time-slot[data-slot-id="' + slotToRemove.id + '"]').removeClass('selected');
+                const index = state.selectedSlots.findIndex(s => s.id === slotToRemove.id);
+                if (index > -1) state.selectedSlots.splice(index, 1);
+            });
+            
+            updateSummaryView();
+        });
+
+        $('#dp-booking-form').on('submit', function(e) {
+            const btn = $('#dp-add-to-cart-btn');
+            btn.prop('disabled', true).text('Processing...');
+
+            const hiddenSlotsContainer = $('#dp-hidden-slots-container');
+            hiddenSlotsContainer.empty();
+
+            state.selectedSlots.forEach((slot, index) => {
+                Object.keys(slot).forEach(key => {
+                    const input = '<input type="hidden" name="slots[' + index + '][' + key + ']" value="' + slot[key] + '">';
+                    hiddenSlotsContainer.append(input);
+                });
+            });
+
+            // The form will now submit naturally.
+        });
+
+        // Initial load after flatpickr is initialized
+        if (datePicker.selectedDates && datePicker.selectedDates.length > 0) {
+            const initialDate = datePicker.selectedDates[0];
+            state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
+            updateSelectedDateDisplay(initialDate);
+            fetchTimeSlots(state.selectedDate);
+        }
+
+        // Sticky summary panel for mobile
+        function updateSummarySticky() {
+            const summary = document.querySelector('.dp-summary-panel');
+            const container = document.querySelector('.dp-container');
+            if (!summary || !container) {
+                return;
+            }
+            if (window.innerWidth > 768) {
+                summary.classList.remove('dp-summary-sticky');
+                container.classList.remove('dp-summary-sticky-offset');
+                return;
+            }
+            // Check if at least one slot is selected
+            const selected = document.querySelectorAll('.time-slot.selected');
+            if (selected.length > 0) {
+                summary.classList.add('dp-summary-sticky');
+                container.classList.add('dp-summary-sticky-offset');
+            } else {
+                summary.classList.remove('dp-summary-sticky');
+                container.classList.remove('dp-summary-sticky-offset');
+            }
+        }
+
+        // Listen for slot clicks to update sticky state
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('time-slot') || e.target.classList.contains('dp-summary-item-delete')) {
+                setTimeout(updateSummarySticky, 50); // Wait for UI update
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', updateSummarySticky);
+
+        // Initial check on page load
+        updateSummarySticky();
+    });
+
+})(jQuery, flatpickr, dp_ajax);
 </script>
 
 </form>

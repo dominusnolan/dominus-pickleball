@@ -67,19 +67,13 @@ class Dominus_Pickleball {
     }
     
     public function enqueue_styles_scripts() {
-        wp_enqueue_style( 'dominus-pickleball-frontend', DP_PLUGIN_URL . 'assets/css/dominus-pickleball-frontend.css', array(), DP_VERSION, 'all' );
+        // Note: dominus-pickleball-frontend CSS and JS are now inlined in the
+        // booking-form.php template to bypass static asset caching issues.
+        // Only flatpickr is enqueued here as it's a third-party dependency.
         
         // We need flatpickr for the calendar
         wp_enqueue_style( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', array(), '4.6.9' );
         wp_enqueue_script( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr', array(), '4.6.9', true );
-
-        wp_enqueue_script( 'dominus-pickleball-frontend', DP_PLUGIN_URL . 'assets/js/dominus-pickleball-frontend.js', array( 'jquery', 'flatpickr' ), DP_VERSION, true );
-        
-        // Pass data to JS
-        wp_localize_script( 'dominus-pickleball-frontend', 'dp_ajax', array(
-            'ajax_url' => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'dp_booking_nonce' )
-        ));
     }
 
 

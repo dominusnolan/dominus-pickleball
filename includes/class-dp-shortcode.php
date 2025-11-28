@@ -24,9 +24,12 @@ class DP_Shortcode {
      * @return string The booking form HTML.
      */
     public function render_booking_form( $atts ) {
-        // Enqueue scripts and styles only when the shortcode is actually being rendered.
-        wp_enqueue_style('dominus-pickleball-frontend');
-        wp_enqueue_script('dominus-pickleball-frontend');
+        // Enqueue Flatpickr (required for calendar) - CSS and JS from CDN
+        wp_enqueue_style( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', array(), '4.6.9' );
+        wp_enqueue_script( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr', array(), '4.6.9', true );
+
+        // Note: dominus-pickleball-frontend CSS and JS are now inlined in the template
+        // to bypass static asset caching issues.
 
         // Enqueue WooCommerce scripts if needed for the login form.
         if ( class_exists( 'WooCommerce' ) && ! is_user_logged_in() ) {
