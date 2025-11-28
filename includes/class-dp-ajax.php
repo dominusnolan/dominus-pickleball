@@ -56,7 +56,7 @@ class DP_Ajax {
                 $court_name  = 'Court ' . $i;
                 $court_slots = [];
                 foreach ( $time_headers as $time ) {
-                    $status = $this->determine_slot_status( $date, $court_name, $time, $date_bookings, $timezone );
+                    $status = $this->determine_slot_status( $date, $court_name, $time, $date_bookings, $timezone, $i );
                     $court_slots[ $time ] = array( 'status' => $status );
                 }
                 $courts[] = array(
@@ -83,7 +83,7 @@ class DP_Ajax {
     /**
      * Determine status for a single slot.
      */
-    private function determine_slot_status( $date, $court_name, $time, $date_bookings, $timezone ) {
+    private function determine_slot_status( $date, $court_name, $time, $date_bookings, $timezone, $court_id ) {
         // Past times become unavailable
         try {
             $slot_dt = new DateTime( $date . ' ' . $time, $timezone );
@@ -98,20 +98,28 @@ class DP_Ajax {
         // Blocked time ranges from settings for this day
         $settings = get_option( 'dp_settings', array() );
         $weekday = strtolower( $slot_dt->format('l') ); // monday, tuesday, etc.
-        $blocked_key = 'dp_blocked_times_' . $weekday;
-        if (!empty($settings[$blocked_key])) {
-            // If you use dropdowns, value is "07:00-09:00"
-            $blocked_value = $settings[$blocked_key];
-            if (strpos($blocked_value, '-') !== false) {
-                list($start, $end) = explode('-', $blocked_value);
-                $start = trim($start);
-                $end = trim($end);
-                if ($start && $end) {
-                    $start_dt = new DateTime($date . ' ' . $start, $timezone);
-                    $end_dt = new DateTime($date . ' ' . $end, $timezone);
-                    if ($slot_dt >= $start_dt && $slot_dt < $end_dt) {
-                        return 'unavailable';
-                    }
+
+        // Check court-specific blocked time first
+        $court_blocked_key = 'dp_blocked_times_court_' . $court_id . '_' . $weekday;
+        $blocked_value = '';
+
+        if ( ! empty( $settings[ $court_blocked_key ] ) ) {
+            // Use court-specific blocked time
+            $blocked_value = $settings[ $court_blocked_key ];
+        } elseif ( ! empty( $settings[ 'dp_blocked_times_' . $weekday ] ) ) {
+            // Fallback to general blocked time
+            $blocked_value = $settings[ 'dp_blocked_times_' . $weekday ];
+        }
+
+        if ( ! empty( $blocked_value ) && strpos( $blocked_value, '-' ) !== false ) {
+            list( $start, $end ) = explode( '-', $blocked_value );
+            $start = trim( $start );
+            $end = trim( $end );
+            if ( $start && $end ) {
+                $start_dt = new DateTime( $date . ' ' . $start, $timezone );
+                $end_dt = new DateTime( $date . ' ' . $end, $timezone );
+                if ( $slot_dt >= $start_dt && $slot_dt < $end_dt ) {
+                    return 'unavailable';
                 }
             }
         }
