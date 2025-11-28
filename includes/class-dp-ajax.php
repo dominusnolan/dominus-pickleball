@@ -95,7 +95,28 @@ class DP_Ajax {
             return 'unavailable';
         }
 
-        // Booked?
+        // Blocked time ranges from settings for this day
+        $settings = get_option( 'dp_settings', array() );
+        $weekday = strtolower( $slot_dt->format('l') ); // monday, tuesday, etc.
+        $blocked_key = 'dp_blocked_times_' . $weekday;
+        if (!empty($settings[$blocked_key])) {
+            // If you use dropdowns, value is "07:00-09:00"
+            $blocked_value = $settings[$blocked_key];
+            if (strpos($blocked_value, '-') !== false) {
+                list($start, $end) = explode('-', $blocked_value);
+                $start = trim($start);
+                $end = trim($end);
+                if ($start && $end) {
+                    $start_dt = new DateTime($date . ' ' . $start, $timezone);
+                    $end_dt = new DateTime($date . ' ' . $end, $timezone);
+                    if ($slot_dt >= $start_dt && $slot_dt < $end_dt) {
+                        return 'unavailable';
+                    }
+                }
+            }
+        }
+
+        // Booked slot
         if ( isset( $date_bookings[ $court_name ][ $time ] ) ) {
             return 'booked';
         }
