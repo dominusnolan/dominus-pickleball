@@ -317,218 +317,209 @@ if ( ! defined( 'WPINC' ) ) {
 
 </form>
 
-<!-- Reclub App Banner - Inline CSS/JS to bypass static asset caching -->
+<!-- Reclub Floating Banner - final design match (see image2) with phone icon and logo toggle -->
 <style>
-    #header, #footer,.title_container, footer{ z-index:0 !important}
-    
-/* Reclub Floating Banner Styles */
-.reclub-floating-banner {
+#reclub-floating-banner {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 9999;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    border-radius: 16px;
-    padding: 16px 24px;
-    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
+    bottom: 32px;
+    right: 32px;
+    z-index: 2000;
+    min-width: 360px;
+    max-width: 470px;
+    background: #F1B83B;
+    border-radius: 20px;
+    box-shadow: 0 4px 48px rgba(44, 38, 32, 0.16);
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    animation: reclub-slide-in 0.4s ease-out;
+    padding: 18px 24px;
+    gap: 22px;
+    font-family: Helvetica, Arial, sans-serif;
 }
-
-@keyframes reclub-slide-in {
-    from {
-        transform: translateY(100px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+.reclub-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
-
 .reclub-banner-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    background: none;
 }
-
 .reclub-banner-icon svg {
-    width: 24px;
-    height: 24px;
-    fill: #ffffff;
+    width: 32px;
+    height: 32px;
+    display: block;
 }
-
 .reclub-banner-content {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-}
-
-.reclub-banner-title {
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0;
-    line-height: 1.2;
-}
-
-.reclub-banner-subtitle {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 12px;
-    margin: 0;
-    line-height: 1.2;
-}
-
-.reclub-banner-btn {
-    display: inline-flex;
-    align-items: center;
+    gap: 0px;
     justify-content: center;
-    background: #ffffff;
-    color: #6366f1;
+}
+.reclub-banner-title {
+    color: #4947CC;
+    font-weight: bold;
     font-size: 14px;
-    font-weight: 600;
-    padding: 10px 20px;
+    margin: 0;
+    letter-spacing: 0.01em;
+}
+.reclub-banner-subtitle {
+    color: #232323;
+    font-size: 14px;
+    margin: 0;
+}
+.reclub-banner-btn {
+    background: #4947CC;
     border: none;
-    border-radius: 10px;
+    border-radius: 13px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 13px 34px;
+    margin-left: auto;
     cursor: pointer;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    transition: background 0.2s;
+    min-width: 160px;
+    box-shadow: 0 1px 6px rgba(73,71,204,0.13);
+    outline: none;
 }
-
+.reclub-banner-btn:disabled {
+    background: #bcbcf2;
+    cursor: not-allowed;
+    color: #4947cc;
+}
 .reclub-banner-btn:hover {
-    background: #f0f0ff;
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: #2323a5;
 }
-
-.reclub-banner-btn:active {
-    transform: scale(0.98);
-}
-
-.reclub-banner-close {
+.reclub-banner-toggle {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 24px;
-    height: 24px;
-    background: #ffffff;
+    top: -19px;
+    right: 14px;
+    background: #fff;
     border: none;
     border-radius: 50%;
-    cursor: pointer;
+    box-shadow: 0 2px 16px rgba(73,71,204,0.11);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s ease;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    z-index: 10;
+    outline: none;
+}
+.reclub-banner-toggle svg {
+    width: 18px;
+    height: 18px;
+    stroke: #4947CC;
+    fill: none;
+    stroke-width: 3;
+}
+@media (max-width: 650px) {
+    #reclub-floating-banner {
+        min-width: 0;
+        max-width: none;
+        padding: 14px 8px;
+        left: 2vw; right: 2vw;
+        bottom: 10px;
+        gap:9px;
+    }
+    .reclub-banner-content { font-size: 15px;}
+    .reclub-banner-title { font-size: 15px;}
+    .reclub-banner-btn { padding: 12px 8px; font-size:14px; min-width: 120px;}
+    .reclub-banner-icon svg { width: 26px; height: 26px;}
+    .reclub-banner-toggle { top: -20px; right: 7px; width:32px; height:32px;}
+}
+.reclub-banner-minimized {
+    position: fixed;
+    bottom: 20px; right: 24px;
+    z-index: 2000;
+    background: #F1B83B;
+    border-radius: 50%;
+    box-shadow: 0 2px 12px rgba(44,38,32,0.13);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    width: 54px; height: 54px;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    transition: background 0.15s;
+}
+.reclub-banner-minimized img {
+    width: 40px; height: 40px;
+    display:block;
+    border-radius: 10px;
+}
+.reclub-banner-minimized:hover {
+    background: #e2a726;
+    box-shadow: 0 8px 24px rgba(241,184,59,0.21);
 }
 
-.reclub-banner-close:hover {
-    background: #f0f0f0;
-    transform: scale(1.1);
-}
-
-.reclub-banner-close svg {
-    width: 12px;
-    height: 12px;
-    fill: #666666;
-}
-
-/* Mobile Responsive Styles */
-@media (max-width: 768px) {
-    .reclub-floating-banner {
-        bottom: 0;
-        left: 0;
-        right: 0;
-        border-radius: 16px 16px 0 0;
-        padding: 16px 20px;
-        justify-content: space-between;
-    }
-
-    .reclub-banner-close {
-        top: -10px;
-        right: 10px;
-    }
-
-    .reclub-banner-content {
-        flex: 1;
-    }
-
-    .reclub-banner-btn {
-        padding: 10px 16px;
-        font-size: 13px;
-    }
-}
 </style>
 
-<div class="reclub-floating-banner" id="reclub-floating-banner">
-    <button class="reclub-banner-close" id="reclub-banner-close" aria-label="Close banner">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-        </svg>
+<div id="reclub-floating-banner">
+    <button class="reclub-banner-toggle" id="reclub-banner-toggle" aria-label="Hide banner" title="Hide banner">
+        <!-- Down arrow SVG, blue -->
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
-    <div class="reclub-banner-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
-        </svg>
+    <div class="reclub-banner-left">
+        <span class="reclub-banner-icon">
+            <!-- Phone SVG (blue to match design, not logo) -->
+            <svg viewBox="0 0 24 24">
+                <rect x="5" y="2" width="14" height="20" rx="3" fill="#F1B83B" stroke="#4947CC" stroke-width="2"/>
+                <rect x="9" y="5" width="6" height="10" rx="1.5" fill="#fff" />
+                <circle cx="12" cy="18" r="2" fill="#4947CC"/>
+            </svg>
+        </span>
+        <span class="reclub-banner-content">
+            <span class="reclub-banner-title">Book easier with Reclub</span>
+            <span class="reclub-banner-subtitle">Open in the app for the best experience</span>
+        </span>
     </div>
-    <div class="reclub-banner-content">
-        <p class="reclub-banner-title">Book easier with Reclub</p>
-        <p class="reclub-banner-subtitle">Open in the app for the best experience</p>
-    </div>
-    <a href="https://reclub.co/clubs/@dominus-club" class="reclub-banner-btn" id="reclub-open-app-btn">
+    <button class="reclub-banner-btn" id="reclub-open-app-btn">
         Open in Reclub App
-    </a>
+    </button>
 </div>
+<!-- Minimized Button: just the logo, clickable to restore full banner -->
+<button class="reclub-banner-minimized" id="reclub-banner-minimized" aria-label="Show banner" title="Open in Reclub App" style="display:none">
+    <img src="https://booking.dominusit.online/wp-content/uploads/2025/11/reclub.jpg" alt="Reclub Logo" />
+</button>
 
 <script>
 (function() {
-    // Reclub Banner - Inline JS for interactivity
     var banner = document.getElementById('reclub-floating-banner');
-    var closeBtn = document.getElementById('reclub-banner-close');
+    var toggleBtn = document.getElementById('reclub-banner-toggle');
+    var minimizedBtn = document.getElementById('reclub-banner-minimized');
     var openAppBtn = document.getElementById('reclub-open-app-btn');
-
-    // Deep link and fallback web URL
     var deepLink = 'reclub://club/@dominus-club';
     var fallbackUrl = 'https://reclub.co/clubs/@dominus-club';
 
-    if (closeBtn && banner) {
-        closeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            banner.style.animation = 'none';
-            banner.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-            banner.style.transform = 'translateY(100%)';
-            banner.style.opacity = '0';
-            setTimeout(function() {
-                banner.style.display = 'none';
-            }, 300);
+    // Minimize the banner, show logo
+    if (toggleBtn && banner && minimizedBtn) {
+        toggleBtn.addEventListener('click', function() {
+            banner.style.display = 'none';
+            minimizedBtn.style.display = 'flex';
+        });
+        minimizedBtn.addEventListener('click', function() {
+            banner.style.display = 'flex';
+            minimizedBtn.style.display = 'none';
         });
     }
 
-    // Handle "Open in Reclub App" button click with fallback
+    // Open app with fallback
     if (openAppBtn) {
         openAppBtn.addEventListener('click', function(e) {
             e.preventDefault();
-
             var fallbackTimer;
-
-            // Try to open the deep link
             window.location.href = deepLink;
-
-            // Fallback to web URL after 1.5 seconds if app is not installed
             fallbackTimer = setTimeout(function() {
                 window.location.href = fallbackUrl;
             }, 1500);
-
-            // Cancel fallback if page becomes hidden (app opened successfully)
             document.addEventListener('visibilitychange', function onVisibilityChange() {
                 if (document.hidden) {
                     clearTimeout(fallbackTimer);
@@ -537,22 +528,5 @@ if ( ! defined( 'WPINC' ) ) {
             });
         });
     }
-
-    // Ensure banner is visible when page loads (mobile sticky support)
-    function ensureBannerVisibility() {
-        if (banner && banner.style.display !== 'none') {
-            banner.style.visibility = 'visible';
-            banner.style.opacity = '1';
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ensureBannerVisibility);
-    } else {
-        ensureBannerVisibility();
-    }
-
-    // Re-check visibility on resize (for mobile/desktop transitions)
-    window.addEventListener('resize', ensureBannerVisibility);
 })();
 </script>
