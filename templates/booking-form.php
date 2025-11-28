@@ -22,7 +22,7 @@ if ( ! defined( 'WPINC' ) ) {
             
             <!-- The summary panel is now here -->
             <div class="dp-summary-panel">
-                <h3>Your selection</h3>
+                <h3 style="font-size: 15px;color: #27ae60;margin-bottom: 0;">Your selection</h3>
                 <div id="dp-selection-summary-items" class="dp-selection-summary-items">
                     <p class="dp-summary-placeholder">Your selected slots will appear here.</p>
                 </div>
@@ -136,7 +136,13 @@ if ( ! defined( 'WPINC' ) ) {
     .dp-summary-sticky-offset {
         padding-top: 160px;
     }
+.av-main-nav-wrap{ display:none !important }
+
 }
+
+.flatpickr-innerContainer{ margin:0 auto; display:block  }
+
+.dp-summary-item-delete{ font-size: 20px;margin-top: 10px;  }
 
 /* Login to Book button styles */
 #dp-login-to-book-btn {
