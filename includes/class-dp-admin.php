@@ -169,12 +169,59 @@ class DP_Admin {
     }
 
     /**
-     * Render a blocked time range input field.
+     * Get time options for dropdown selectors in 30-minute increments.
+     *
+     * @return array Array of time options (e.g., ['07:00', '07:30', '08:00', ...])
+     */
+    private function get_time_options() {
+        $times = array();
+        $start = strtotime( '07:00' );
+        $end = strtotime( '23:00' );
+        
+        while ( $start <= $end ) {
+            $times[] = date( 'H:i', $start );
+            $start = strtotime( '+30 minutes', $start );
+        }
+        
+        return $times;
+    }
+
+    /**
+     * Render a blocked time range input field with two dropdown selectors.
      */
     public function render_blocked_time_field( $args ) {
         $options = get_option( 'dp_settings' );
         $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
-        echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" value="' . esc_attr( $value ) . '" placeholder="07:00-09:00" />';
+        
+        // Parse existing value (format: "HH:MM-HH:MM")
+        $start_time = '';
+        $end_time = '';
+        if ( ! empty( $value ) && strpos( $value, '-' ) !== false ) {
+            list( $start_time, $end_time ) = explode( '-', $value );
+        }
+        
+        $time_options = $this->get_time_options();
+        $field_id = esc_attr( $args['id'] );
+        
+        // Start Time dropdown
+        echo '<select id="' . $field_id . '_start" name="dp_settings[' . $field_id . '][start]">';
+        echo '<option value="">' . esc_html__( '-- Start Time --', 'dominus-pickleball' ) . '</option>';
+        foreach ( $time_options as $time ) {
+            $selected = ( $time === $start_time ) ? ' selected="selected"' : '';
+            echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+        }
+        echo '</select>';
+        
+        echo ' <span style="margin: 0 5px;">to</span> ';
+        
+        // End Time dropdown
+        echo '<select id="' . $field_id . '_end" name="dp_settings[' . $field_id . '][end]">';
+        echo '<option value="">' . esc_html__( '-- End Time --', 'dominus-pickleball' ) . '</option>';
+        foreach ( $time_options as $time ) {
+            $selected = ( $time === $end_time ) ? ' selected="selected"' : '';
+            echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+        }
+        echo '</select>';
     }
 
     /**
@@ -190,7 +237,22 @@ class DP_Admin {
         // Sanitize blocked time ranges for each day of the week
         foreach ( $this->get_days_of_week() as $day ) {
             $key = 'dp_blocked_times_' . $day;
-            $sanitized_input[ $key ] = isset( $input[ $key ] ) ? sanitize_text_field( $input[ $key ] ) : '';
+            $sanitized_value = '';
+            
+            if ( isset( $input[ $key ] ) && is_array( $input[ $key ] ) ) {
+                $start = isset( $input[ $key ]['start'] ) ? sanitize_text_field( $input[ $key ]['start'] ) : '';
+                $end = isset( $input[ $key ]['end'] ) ? sanitize_text_field( $input[ $key ]['end'] ) : '';
+                
+                // Only save value if both start and end are set
+                if ( ! empty( $start ) && ! empty( $end ) ) {
+                    $sanitized_value = $start . '-' . $end;
+                }
+            } elseif ( isset( $input[ $key ] ) && is_string( $input[ $key ] ) ) {
+                // Handle legacy string format for backward compatibility
+                $sanitized_value = sanitize_text_field( $input[ $key ] );
+            }
+            
+            $sanitized_input[ $key ] = $sanitized_value;
         }
         
         return $sanitized_input;
