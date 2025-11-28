@@ -156,6 +156,8 @@ if ( ! defined( 'WPINC' ) ) {
 
 <!-- Reclub App Banner - Inline CSS/JS to bypass static asset caching -->
 <style>
+    #header, #footer,.title_container{ z-index:0 !important}
+    
 /* Reclub Floating Banner Styles */
 .reclub-floating-banner {
     position: fixed;
@@ -319,7 +321,7 @@ if ( ! defined( 'WPINC' ) ) {
         <p class="reclub-banner-title">Book easier with Reclub</p>
         <p class="reclub-banner-subtitle">Open in the app for the best experience</p>
     </div>
-    <a href="reclub://club/YOUR_CLUB_ID" class="reclub-banner-btn" id="reclub-open-app-btn">
+    <a href="reclub://club/4M3PI" class="reclub-banner-btn" id="reclub-open-app-btn">
         Open in Reclub App
     </a>
 </div>
