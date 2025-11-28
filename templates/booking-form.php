@@ -257,6 +257,288 @@ if ( ! defined( 'WPINC' ) ) {
         updateSummarySticky();
     }
 
+    /**
+     * Contiguous slot grouping logic
+     * This intercepts and re-renders the summary to split non-contiguous time slots
+     * into separate lines (e.g., "12pm - 2pm", "4pm - 6pm" instead of "12pm - 6pm")
+     */
+    function parseTimeToHour(timeStr) {
+        // Parse time string like "12pm", "1pm", "9am" to 24-hour format
+        var match = timeStr.match(/(\d+)(am|pm)/i);
+        if (!match) return 0;
+        var hour = parseInt(match[1], 10);
+        var period = match[2].toLowerCase();
+        if (period === 'pm' && hour !== 12) {
+            hour += 12;
+        } else if (period === 'am' && hour === 12) {
+            hour = 0;
+        }
+        return hour;
+    }
+
+    function formatHourToTime(hour) {
+        // Convert 24-hour format to display string like "12pm", "1pm", "9am"
+        var period = hour >= 12 ? 'pm' : 'am';
+        var displayHour = hour % 12;
+        if (displayHour === 0) displayHour = 12;
+        return displayHour + period;
+    }
+
+    function getSelectedSlotsFromDOM() {
+        // Extract selected slot data from DOM elements
+        var selectedSlots = [];
+        var slotElements = document.querySelectorAll('.time-slot.selected');
+        slotElements.forEach(function(el) {
+            var slotId = el.getAttribute('data-slot-id');
+            var courtId = el.getAttribute('data-court-id');
+            var courtName = el.getAttribute('data-court-name');
+            var time = el.getAttribute('data-time');
+            if (slotId && courtId && time) {
+                var datePart = slotId.split('_')[0]; // Extract date from slot ID
+                selectedSlots.push({
+                    id: slotId,
+                    courtId: courtId,
+                    courtName: courtName,
+                    time: time,
+                    date: datePart,
+                    hour: parseTimeToHour(time)
+                });
+            }
+        });
+        return selectedSlots;
+    }
+
+    function groupContiguousSlots(slots) {
+        // Group slots by court/date and split into contiguous ranges
+        if (!slots || slots.length === 0) return [];
+
+        // First, group by court and date
+        var courtDateGroups = {};
+        slots.forEach(function(slot) {
+            var key = slot.date + '_' + slot.courtId;
+            if (!courtDateGroups[key]) {
+                courtDateGroups[key] = {
+                    date: slot.date,
+                    courtId: slot.courtId,
+                    courtName: slot.courtName,
+                    slots: []
+                };
+            }
+            courtDateGroups[key].slots.push(slot);
+        });
+
+        // For each court/date group, split into contiguous ranges
+        var result = [];
+        Object.keys(courtDateGroups).forEach(function(key) {
+            var group = courtDateGroups[key];
+            // Sort by hour
+            group.slots.sort(function(a, b) { return a.hour - b.hour; });
+
+            var contiguousRanges = [];
+            var currentRange = null;
+
+            group.slots.forEach(function(slot) {
+                if (!currentRange) {
+                    // Start new range
+                    currentRange = {
+                        date: slot.date,
+                        courtId: slot.courtId,
+                        courtName: slot.courtName,
+                        slots: [slot],
+                        startHour: slot.hour,
+                        endHour: slot.hour
+                    };
+                } else if (slot.hour === currentRange.endHour + 1) {
+                    // Contiguous - extend current range
+                    currentRange.slots.push(slot);
+                    currentRange.endHour = slot.hour;
+                } else {
+                    // Gap detected - save current range and start new one
+                    contiguousRanges.push(currentRange);
+                    currentRange = {
+                        date: slot.date,
+                        courtId: slot.courtId,
+                        courtName: slot.courtName,
+                        slots: [slot],
+                        startHour: slot.hour,
+                        endHour: slot.hour
+                    };
+                }
+            });
+
+            // Don't forget the last range
+            if (currentRange) {
+                contiguousRanges.push(currentRange);
+            }
+
+            // Add time range strings and unique keys
+            contiguousRanges.forEach(function(range, idx) {
+                range.timeRange = formatHourToTime(range.startHour) + ' - ' + formatHourToTime(range.endHour + 1);
+                range.key = range.date + '_' + range.courtId + '_' + idx;
+                result.push(range);
+            });
+        });
+
+        return result;
+    }
+
+    function renderContiguousSummary() {
+        var summaryContainer = document.getElementById('dp-selection-summary-items');
+        if (!summaryContainer) return;
+
+        var slots = getSelectedSlotsFromDOM();
+        if (slots.length === 0) {
+            // No slots selected - show placeholder
+            summaryContainer.innerHTML = '<p class="dp-summary-placeholder">Your selected slots will appear here.</p>';
+            var addBtn = document.getElementById('dp-add-to-cart-btn');
+            if (addBtn) addBtn.disabled = true;
+            var totalEl = document.getElementById('dp-summary-total-price');
+            if (totalEl) totalEl.innerHTML = '₱0.00';
+            return;
+        }
+
+        var contiguousGroups = groupContiguousSlots(slots);
+        var total = 0;
+
+        // Get price per slot from existing summary or default
+        var pricePerSlot = window.dpPricePerSlot || 0;
+        var currencySymbol = window.dpCurrencySymbol || '₱';
+
+        // Try to extract price from existing state if available via window
+        if (typeof dp_ajax !== 'undefined' && window.dpPricePerSlot === undefined) {
+            // Price will be set by external script, use mutation observer to get it
+        }
+
+        summaryContainer.innerHTML = '';
+
+        contiguousGroups.forEach(function(group) {
+            var price = group.slots.length * pricePerSlot;
+            total += price;
+
+            // Format date
+            var dateParts = group.date.split('-');
+            var dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            var formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+
+            var itemHtml = '<div class="dp-summary-item" data-range-key="' + group.key + '">' +
+                '<span class="dp-summary-item-date">' + formattedDate + '</span>' +
+                '<span class="dp-summary-item-price">' + currencySymbol + price.toFixed(2) + '</span>' +
+                '<span class="dp-summary-item-time">' + group.timeRange + '</span>' +
+                '<span class="dp-summary-item-delete" data-range-key="' + group.key + '" title="Remove selection">🗑️</span>' +
+                '<span class="dp-summary-item-court">' + group.courtName + '</span>' +
+                '</div>';
+
+            summaryContainer.insertAdjacentHTML('beforeend', itemHtml);
+        });
+
+        var totalEl = document.getElementById('dp-summary-total-price');
+        if (totalEl) totalEl.innerHTML = currencySymbol + total.toFixed(2);
+
+        var addBtn = document.getElementById('dp-add-to-cart-btn');
+        if (addBtn) addBtn.disabled = false;
+    }
+
+    function handleContiguousDelete(e) {
+        var deleteBtn = e.target.closest('.dp-summary-item-delete');
+        if (!deleteBtn) return;
+
+        var rangeKey = deleteBtn.getAttribute('data-range-key');
+        if (!rangeKey) return;
+
+        // Get current slots and find the range to delete
+        var slots = getSelectedSlotsFromDOM();
+        var contiguousGroups = groupContiguousSlots(slots);
+        var groupToDelete = contiguousGroups.find(function(g) { return g.key === rangeKey; });
+
+        if (groupToDelete) {
+            // Remove selection from DOM slots
+            groupToDelete.slots.forEach(function(slot) {
+                var slotEl = document.querySelector('.time-slot[data-slot-id="' + slot.id + '"]');
+                if (slotEl) {
+                    slotEl.classList.remove('selected');
+                    // Trigger click to sync with external JS state
+                    slotEl.click();
+                }
+            });
+        }
+
+        // Update sticky state after deletion
+        setTimeout(updateSummarySticky, 50);
+    }
+
+    // MutationObserver to intercept summary updates from external JS
+    var summaryObserver = null;
+    var isUpdatingSummary = false;
+
+    function initContiguousSummaryObserver() {
+        var summaryContainer = document.getElementById('dp-selection-summary-items');
+        if (!summaryContainer || summaryObserver) return;
+
+        summaryObserver = new MutationObserver(function(mutations) {
+            if (isUpdatingSummary) return;
+
+            // Check if there are actual content changes (not just our own updates)
+            var hasRelevantChanges = mutations.some(function(m) {
+                return m.type === 'childList' && m.addedNodes.length > 0;
+            });
+
+            if (hasRelevantChanges) {
+                // Extract price info from existing summary before re-rendering
+                var existingSummaryItem = summaryContainer.querySelector('.dp-summary-item');
+                if (existingSummaryItem) {
+                    var priceEl = existingSummaryItem.querySelector('.dp-summary-item-price');
+                    if (priceEl) {
+                        var priceText = priceEl.textContent;
+                        var currencyMatch = priceText.match(/^([^\d]+)/);
+                        if (currencyMatch) {
+                            window.dpCurrencySymbol = currencyMatch[1];
+                        }
+                    }
+                }
+
+                // Calculate price per slot from total and slot count
+                var totalEl = document.getElementById('dp-summary-total-price');
+                var slots = getSelectedSlotsFromDOM();
+                if (totalEl && slots.length > 0) {
+                    var totalText = totalEl.textContent;
+                    var totalMatch = totalText.match(/([\d.]+)/);
+                    if (totalMatch) {
+                        var totalValue = parseFloat(totalMatch[1]);
+                        window.dpPricePerSlot = totalValue / slots.length;
+                    }
+                }
+
+                // Re-render with contiguous grouping
+                isUpdatingSummary = true;
+                setTimeout(function() {
+                    renderContiguousSummary();
+                    isUpdatingSummary = false;
+                }, 10);
+            }
+        });
+
+        summaryObserver.observe(summaryContainer, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    // Override delete button behavior for contiguous ranges
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('dp-summary-item-delete') && e.target.hasAttribute('data-range-key')) {
+            e.stopPropagation();
+            e.preventDefault();
+            handleContiguousDelete(e);
+        }
+    }, true);
+
+    // Initialize observer when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initContiguousSummaryObserver);
+    } else {
+        initContiguousSummaryObserver();
+    }
+
     // Login Modal functionality
     function initLoginModal() {
         var loginBtn = document.getElementById('dp-login-to-book-btn');
