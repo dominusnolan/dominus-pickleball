@@ -321,7 +321,7 @@ if ( ! defined( 'WPINC' ) ) {
         <p class="reclub-banner-title">Book easier with Reclub</p>
         <p class="reclub-banner-subtitle">Open in the app for the best experience</p>
     </div>
-    <a href="reclub://club/4M3PI" class="reclub-banner-btn" id="reclub-open-app-btn">
+    <a href="https://reclub.co/clubs/@dominus-club" class="reclub-banner-btn" id="reclub-open-app-btn">
         Open in Reclub App
     </a>
 </div>
@@ -331,6 +331,11 @@ if ( ! defined( 'WPINC' ) ) {
     // Reclub Banner - Inline JS for interactivity
     var banner = document.getElementById('reclub-floating-banner');
     var closeBtn = document.getElementById('reclub-banner-close');
+    var openAppBtn = document.getElementById('reclub-open-app-btn');
+
+    // Deep link and fallback web URL
+    var deepLink = 'reclub://club/@dominus-club';
+    var fallbackUrl = 'https://reclub.co/clubs/@dominus-club';
 
     if (closeBtn && banner) {
         closeBtn.addEventListener('click', function(e) {
@@ -342,6 +347,31 @@ if ( ! defined( 'WPINC' ) ) {
             setTimeout(function() {
                 banner.style.display = 'none';
             }, 300);
+        });
+    }
+
+    // Handle "Open in Reclub App" button click with fallback
+    if (openAppBtn) {
+        openAppBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            var fallbackTimer;
+
+            // Try to open the deep link
+            window.location.href = deepLink;
+
+            // Fallback to web URL after 1.5 seconds if app is not installed
+            fallbackTimer = setTimeout(function() {
+                window.location.href = fallbackUrl;
+            }, 1500);
+
+            // Cancel fallback if page becomes hidden (app opened successfully)
+            document.addEventListener('visibilitychange', function onVisibilityChange() {
+                if (document.hidden) {
+                    clearTimeout(fallbackTimer);
+                    document.removeEventListener('visibilitychange', onVisibilityChange);
+                }
+            });
         });
     }
 
