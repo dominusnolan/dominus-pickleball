@@ -31,8 +31,13 @@ if ( ! defined( 'WPINC' ) ) {
                         <span>Total</span>
                         <strong id="dp-summary-total-price">₱0.00</strong>
                     </div>
-                    <?php // This is now a submit button for the form ?>
-                    <button type="submit" id="dp-add-to-cart-btn" class="dp-button" disabled>Book Now</button>
+                    <?php if ( is_user_logged_in() ) : ?>
+                        <?php // User is logged in - show Book Now button ?>
+                        <button type="submit" id="dp-add-to-cart-btn" class="dp-button" disabled>Book Now</button>
+                    <?php else : ?>
+                        <?php // User is NOT logged in - show Login to Book button ?>
+                        <button type="button" id="dp-login-to-book-btn" class="dp-button">Login to Book</button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -64,19 +69,38 @@ if ( ! defined( 'WPINC' ) ) {
             </div>
         </div>
 
-        <?php if ( ! is_user_logged_in() && class_exists( 'WooCommerce' ) ) : ?>
+        <?php if ( ! is_user_logged_in() ) : ?>
         <div id="dp-login-modal" class="dp-modal">
-            <div class="dp-modal-content">
+            <div class="dp-modal-content dp-social-login-modal">
                 <span class="dp-modal-close">&times;</span>
-                <div class="dp-woocommerce-forms">
-                    <div class="dp-form-login">
-                        <h2>Login</h2>
-                        <?php woocommerce_login_form(); ?>
+                <div class="dp-social-login-container">
+                    <h2>Login or Sign Up to Book</h2>
+                    <p class="dp-social-login-subtitle">Choose your preferred login method:</p>
+                    
+                    <div class="dp-social-login-buttons">
+                        <?php // Nextend Social Login - Apple ?>
+                        <?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
+                            <div class="dp-social-login-option">
+                                <?php echo do_shortcode( '[nextend_social_login provider="apple"]' ); ?>
+                            </div>
+                            <div class="dp-social-login-option">
+                                <?php echo do_shortcode( '[nextend_social_login provider="phone"]' ); ?>
+                            </div>
+                            <div class="dp-social-login-option">
+                                <?php echo do_shortcode( '[nextend_social_login provider="email"]' ); ?>
+                            </div>
+                        <?php else : ?>
+                            <p class="dp-social-login-unavailable">Social login is currently unavailable. Please try again later.</p>
+                        <?php endif; ?>
                     </div>
-                    <?php if ( get_option( 'woocommerce_enable_myaccount_registration' ) === 'yes' ) : ?>
-                    <div class="dp-form-register">
-                        <h2>Register</h2>
-                        <?php woocommerce_register_form(); ?>
+                    
+                    <?php // Only show WooCommerce forms if registration is enabled ?>
+                    <?php if ( class_exists( 'WooCommerce' ) && get_option( 'woocommerce_enable_myaccount_registration' ) === 'yes' ) : ?>
+                    <div class="dp-woocommerce-forms">
+                        <div class="dp-form-login">
+                            <h3>Or login with your account</h3>
+                            <?php woocommerce_login_form(); ?>
+                        </div>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -111,6 +135,78 @@ if ( ! defined( 'WPINC' ) ) {
     }
 }
 
+/* Login to Book button styles */
+#dp-login-to-book-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: var(--dp-primary-color, #2c3e50);
+    color: white;
+    transition: background-color 0.2s ease;
+}
+
+#dp-login-to-book-btn:hover {
+    background-color: var(--dp-secondary-color, #34495e);
+}
+
+/* Social Login Modal Styles */
+.dp-social-login-modal {
+    max-width: 500px;
+}
+
+.dp-social-login-container {
+    text-align: center;
+}
+
+.dp-social-login-container h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--dp-primary-color, #2c3e50);
+}
+
+.dp-social-login-subtitle {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.dp-social-login-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.dp-social-login-option {
+    display: flex;
+    justify-content: center;
+}
+
+.dp-social-login-unavailable {
+    color: #c0392b;
+    padding: 20px;
+    background-color: #fdf2f2;
+    border-radius: 5px;
+}
+
+.dp-social-login-container .dp-woocommerce-forms {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.dp-social-login-container .dp-woocommerce-forms h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--dp-primary-color, #2c3e50);
+    font-size: 1em;
+}
+
+.dp-social-login-container .dp-form-login {
+    text-align: left;
+}
 
 </style>
 
@@ -150,6 +246,50 @@ if ( ! defined( 'WPINC' ) ) {
         document.addEventListener('DOMContentLoaded', updateSummarySticky);
     } else {
         updateSummarySticky();
+    }
+
+    // Login Modal functionality
+    function initLoginModal() {
+        var loginBtn = document.getElementById('dp-login-to-book-btn');
+        var modal = document.getElementById('dp-login-modal');
+        var closeBtn = modal ? modal.querySelector('.dp-modal-close') : null;
+
+        if (loginBtn && modal) {
+            // Open modal on Login to Book button click
+            loginBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                modal.style.display = 'block';
+            });
+        }
+
+        if (closeBtn && modal) {
+            // Close modal on close button click
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        }
+
+        if (modal) {
+            // Close modal when clicking outside the modal content
+            window.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            // Close modal on Escape key press
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLoginModal);
+    } else {
+        initLoginModal();
     }
 
    
