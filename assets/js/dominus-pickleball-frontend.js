@@ -210,6 +210,42 @@
             updateSelectedDateDisplay(initialDate);
             fetchTimeSlots(state.selectedDate);
         }
+
+        // Sticky summary panel for mobile
+        function updateSummarySticky() {
+            const summary = document.querySelector('.dp-summary-panel');
+            const container = document.querySelector('.dp-container');
+            if (!summary || !container) {
+                return;
+            }
+            if (window.innerWidth > 768) {
+                summary.classList.remove('dp-summary-sticky');
+                container.classList.remove('dp-summary-sticky-offset');
+                return;
+            }
+            // Check if at least one slot is selected
+            const selected = document.querySelectorAll('.time-slot.selected');
+            if (selected.length > 0) {
+                summary.classList.add('dp-summary-sticky');
+                container.classList.add('dp-summary-sticky-offset');
+            } else {
+                summary.classList.remove('dp-summary-sticky');
+                container.classList.remove('dp-summary-sticky-offset');
+            }
+        }
+
+        // Listen for slot clicks to update sticky state
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('time-slot') || e.target.classList.contains('dp-summary-item-delete')) {
+                setTimeout(updateSummarySticky, 50); // Wait for UI update
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', updateSummarySticky);
+
+        // Initial check on page load
+        updateSummarySticky();
     });
 
 })(jQuery, flatpickr, dp_ajax);
