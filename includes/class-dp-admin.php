@@ -118,6 +118,31 @@ class DP_Admin {
                 [ 'id' => 'dp_blocked_times_' . $day_key, 'default' => '' ]
             );
         }
+
+        // Per-Court Blocked Time Ranges Section
+        add_settings_section(
+            'dp_court_blocked_times_section',
+            __( 'Per-Court Blocked Time Ranges', 'dominus-pickleball' ),
+            array( $this, 'render_court_blocked_times_section_description' ),
+            'dominus-pickleball'
+        );
+
+        // Get the number of courts from existing settings
+        $options = get_option( 'dp_settings' );
+        $number_of_courts = isset( $options['dp_number_of_courts'] ) ? absint( $options['dp_number_of_courts'] ) : 3;
+
+        for ( $court = 1; $court <= $number_of_courts; $court++ ) {
+            foreach ( $this->get_days_of_week() as $day_key ) {
+                add_settings_field(
+                    'dp_blocked_times_court_' . $court . '_' . $day_key,
+                    sprintf( __( 'Court %d - %s', 'dominus-pickleball' ), $court, $day_labels[ $day_key ] ),
+                    array( $this, 'render_blocked_time_field' ),
+                    'dominus-pickleball',
+                    'dp_court_blocked_times_section',
+                    [ 'id' => 'dp_blocked_times_court_' . $court . '_' . $day_key, 'default' => '' ]
+                );
+            }
+        }
     }
 
     /**
@@ -229,6 +254,13 @@ class DP_Admin {
     }
 
     /**
+     * Render description for per-court blocked times section.
+     */
+    public function render_court_blocked_times_section_description() {
+        echo '<p>' . esc_html__( 'Set blocked time ranges for specific courts. These override the general blocked times above for the specified court and day.', 'dominus-pickleball' ) . '</p>';
+    }
+
+    /**
      * Sanitize settings fields.
      */
     public function sanitize_settings( $input ) {
@@ -257,6 +289,30 @@ class DP_Admin {
             }
             
             $sanitized_input[ $key ] = $sanitized_value;
+        }
+
+        // Sanitize per-court blocked time ranges
+        $number_of_courts = isset( $sanitized_input['dp_number_of_courts'] ) ? $sanitized_input['dp_number_of_courts'] : 3;
+        for ( $court = 1; $court <= $number_of_courts; $court++ ) {
+            foreach ( $this->get_days_of_week() as $day ) {
+                $key = 'dp_blocked_times_court_' . $court . '_' . $day;
+                $sanitized_value = '';
+
+                if ( isset( $input[ $key ] ) && is_array( $input[ $key ] ) ) {
+                    $start = isset( $input[ $key ]['start'] ) ? sanitize_text_field( $input[ $key ]['start'] ) : '';
+                    $end = isset( $input[ $key ]['end'] ) ? sanitize_text_field( $input[ $key ]['end'] ) : '';
+
+                    // Only save value if both start and end are set
+                    if ( ! empty( $start ) && ! empty( $end ) ) {
+                        $sanitized_value = $start . '-' . $end;
+                    }
+                } elseif ( isset( $input[ $key ] ) && is_string( $input[ $key ] ) ) {
+                    // Handle legacy string format for backward compatibility
+                    $sanitized_value = sanitize_text_field( $input[ $key ] );
+                }
+
+                $sanitized_input[ $key ] = $sanitized_value;
+            }
         }
         
         return $sanitized_input;
