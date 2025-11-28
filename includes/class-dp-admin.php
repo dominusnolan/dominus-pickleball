@@ -292,7 +292,7 @@ class DP_Admin {
         }
 
         // Sanitize per-court blocked time ranges
-        $number_of_courts = $sanitized_input['dp_number_of_courts'];
+        $number_of_courts = isset( $sanitized_input['dp_number_of_courts'] ) ? $sanitized_input['dp_number_of_courts'] : 3;
         for ( $court = 1; $court <= $number_of_courts; $court++ ) {
             foreach ( $this->get_days_of_week() as $day ) {
                 $key = 'dp_blocked_times_court_' . $court . '_' . $day;
