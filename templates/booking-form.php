@@ -640,9 +640,18 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
 // Read and inline the booking JavaScript from the external file
 // This ensures the latest version is always loaded and bypasses static asset caching
 $js_file_path = DP_PLUGIN_DIR . 'assets/js/dominus-pickleball-frontend.js';
-if ( file_exists( $js_file_path ) ) {
-    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-    echo file_get_contents( $js_file_path );
+if ( file_exists( $js_file_path ) && is_readable( $js_file_path ) ) {
+    // Validate this is the expected file by checking it's within the plugin directory
+    $real_path = realpath( $js_file_path );
+    $plugin_dir = realpath( DP_PLUGIN_DIR );
+    if ( $real_path && $plugin_dir && strpos( $real_path, $plugin_dir ) === 0 ) {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        echo file_get_contents( $js_file_path );
+    } else {
+        echo '/* Error: JavaScript file path validation failed */';
+    }
+} else {
+    echo '/* Error: Required JavaScript file not found or not readable: ' . esc_js( basename( $js_file_path ) ) . ' */';
 }
 ?>
 </script>
