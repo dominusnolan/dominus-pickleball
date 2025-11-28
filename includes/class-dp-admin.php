@@ -27,6 +27,23 @@ class DP_Admin {
     }
 
     /**
+     * Get abbreviated day labels for table headers.
+     *
+     * @return array
+     */
+    private function get_day_labels_short() {
+        return array(
+            'monday'    => __( 'Mon', 'dominus-pickleball' ),
+            'tuesday'   => __( 'Tue', 'dominus-pickleball' ),
+            'wednesday' => __( 'Wed', 'dominus-pickleball' ),
+            'thursday'  => __( 'Thu', 'dominus-pickleball' ),
+            'friday'    => __( 'Fri', 'dominus-pickleball' ),
+            'saturday'  => __( 'Sat', 'dominus-pickleball' ),
+            'sunday'    => __( 'Sun', 'dominus-pickleball' ),
+        );
+    }
+
+    /**
      * Add the admin menu page.
      */
     public function add_admin_menu() {
@@ -119,30 +136,13 @@ class DP_Admin {
             );
         }
 
-        // Per-Court Blocked Time Ranges Section
+        // Per-Court Blocked Time Ranges Section (Table-based UI)
         add_settings_section(
             'dp_court_blocked_times_section',
             __( 'Per-Court Blocked Time Ranges', 'dominus-pickleball' ),
-            array( $this, 'render_court_blocked_times_section_description' ),
+            array( $this, 'render_court_blocked_times_table' ),
             'dominus-pickleball'
         );
-
-        // Get the number of courts from existing settings
-        $options = get_option( 'dp_settings' );
-        $number_of_courts = isset( $options['dp_number_of_courts'] ) ? absint( $options['dp_number_of_courts'] ) : 3;
-
-        for ( $court = 1; $court <= $number_of_courts; $court++ ) {
-            foreach ( $this->get_days_of_week() as $day_key ) {
-                add_settings_field(
-                    'dp_blocked_times_court_' . $court . '_' . $day_key,
-                    sprintf( __( 'Court %d - %s', 'dominus-pickleball' ), $court, $day_labels[ $day_key ] ),
-                    array( $this, 'render_blocked_time_field' ),
-                    'dominus-pickleball',
-                    'dp_court_blocked_times_section',
-                    [ 'id' => 'dp_blocked_times_court_' . $court . '_' . $day_key, 'default' => '' ]
-                );
-            }
-        }
     }
 
     /**
@@ -254,10 +254,116 @@ class DP_Admin {
     }
 
     /**
-     * Render description for per-court blocked times section.
+     * Render table-based UI for per-court blocked times section.
      */
-    public function render_court_blocked_times_section_description() {
+    public function render_court_blocked_times_table() {
+        $options = get_option( 'dp_settings' );
+        $number_of_courts = isset( $options['dp_number_of_courts'] ) ? absint( $options['dp_number_of_courts'] ) : 3;
+        $time_options = $this->get_time_options();
+        $day_labels = $this->get_day_labels_short();
+        
         echo '<p>' . esc_html__( 'Set blocked time ranges for specific courts. These override the general blocked times above for the specified court and day.', 'dominus-pickleball' ) . '</p>';
+        
+        // Table styles
+        $table_styles = '
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 15px;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        ';
+        $th_styles = '
+            background: #f1f1f1;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-weight: 600;
+            font-size: 13px;
+        ';
+        $td_styles = '
+            padding: 10px 6px;
+            text-align: center;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        ';
+        $court_th_styles = '
+            background: #f9f9f9;
+            padding: 12px 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+            font-weight: 600;
+            font-size: 13px;
+            white-space: nowrap;
+        ';
+        $select_styles = '
+            width: 80px;
+            padding: 4px 2px;
+            font-size: 12px;
+            margin: 2px 0;
+        ';
+        $separator_styles = 'font-size:11px;color:#666;';
+        
+        echo '<table style="' . esc_attr( $table_styles ) . '">';
+        
+        // Header row with weekday names
+        echo '<thead><tr>';
+        echo '<th style="' . esc_attr( $th_styles ) . '">' . esc_html__( 'Court', 'dominus-pickleball' ) . '</th>';
+        foreach ( $this->get_days_of_week() as $day_key ) {
+            echo '<th style="' . esc_attr( $th_styles ) . '">' . esc_html( $day_labels[ $day_key ] ) . '</th>';
+        }
+        echo '</tr></thead>';
+        
+        echo '<tbody>';
+        
+        // Rows for each court
+        for ( $court = 1; $court <= $number_of_courts; $court++ ) {
+            echo '<tr>';
+            echo '<th style="' . esc_attr( $court_th_styles ) . '">' . sprintf( esc_html__( 'Court %d', 'dominus-pickleball' ), $court ) . '</th>';
+            
+            foreach ( $this->get_days_of_week() as $day_key ) {
+                $field_id = 'dp_blocked_times_court_' . $court . '_' . $day_key;
+                $value = isset( $options[ $field_id ] ) ? $options[ $field_id ] : '';
+                
+                // Parse existing value (format: "HH:MM-HH:MM")
+                $start_time = '';
+                $end_time = '';
+                if ( ! empty( $value ) && strpos( $value, '-' ) !== false ) {
+                    $parts = explode( '-', $value, 2 );
+                    if ( count( $parts ) === 2 ) {
+                        $start_time = $parts[0];
+                        $end_time = $parts[1];
+                    }
+                }
+                
+                echo '<td style="' . esc_attr( $td_styles ) . '">';
+                
+                // Start Time dropdown
+                echo '<select style="' . esc_attr( $select_styles ) . '" name="dp_settings[' . esc_attr( $field_id ) . '][start]">';
+                echo '<option value="">--</option>';
+                foreach ( $time_options as $time ) {
+                    $selected = ( $time === $start_time ) ? ' selected="selected"' : '';
+                    echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+                }
+                echo '</select>';
+                
+                echo '<br><span style="' . esc_attr( $separator_styles ) . '">to</span><br>';
+                
+                // End Time dropdown
+                echo '<select style="' . esc_attr( $select_styles ) . '" name="dp_settings[' . esc_attr( $field_id ) . '][end]">';
+                echo '<option value="">--</option>';
+                foreach ( $time_options as $time ) {
+                    $selected = ( $time === $end_time ) ? ' selected="selected"' : '';
+                    echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+                }
+                echo '</select>';
+                
+                echo '</td>';
+            }
+            
+            echo '</tr>';
+        }
+        
+        echo '</tbody></table>';
     }
 
     /**
