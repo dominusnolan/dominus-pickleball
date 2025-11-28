@@ -156,7 +156,7 @@ if ( ! defined( 'WPINC' ) ) {
 
 <!-- Reclub App Banner - Inline CSS/JS to bypass static asset caching -->
 <style>
-    #header, #footer,.title_container{ z-index:0 !important}
+    #header, #footer,.title_container, footer{ z-index:0 !important}
     
 /* Reclub Floating Banner Styles */
 .reclub-floating-banner {
