@@ -153,3 +153,211 @@ if ( ! defined( 'WPINC' ) ) {
 </script>
 
 </form>
+
+<!-- Reclub App Banner - Inline CSS/JS to bypass static asset caching -->
+<style>
+/* Reclub Floating Banner Styles */
+.reclub-floating-banner {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-radius: 16px;
+    padding: 16px 24px;
+    box-shadow: 0 8px 32px rgba(99, 102, 241, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    animation: reclub-slide-in 0.4s ease-out;
+}
+
+@keyframes reclub-slide-in {
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.reclub-banner-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.reclub-banner-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: #ffffff;
+}
+
+.reclub-banner-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reclub-banner-title {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.reclub-banner-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.reclub-banner-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    color: #6366f1;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.reclub-banner-btn:hover {
+    background: #f0f0ff;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.reclub-banner-btn:active {
+    transform: scale(0.98);
+}
+
+.reclub-banner-close {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+}
+
+.reclub-banner-close:hover {
+    background: #f0f0f0;
+    transform: scale(1.1);
+}
+
+.reclub-banner-close svg {
+    width: 12px;
+    height: 12px;
+    fill: #666666;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .reclub-floating-banner {
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 16px 16px 0 0;
+        padding: 16px 20px;
+        justify-content: space-between;
+    }
+
+    .reclub-banner-close {
+        top: -10px;
+        right: 10px;
+    }
+
+    .reclub-banner-content {
+        flex: 1;
+    }
+
+    .reclub-banner-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+</style>
+
+<div class="reclub-floating-banner" id="reclub-floating-banner">
+    <button class="reclub-banner-close" id="reclub-banner-close" aria-label="Close banner">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+    </button>
+    <div class="reclub-banner-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+        </svg>
+    </div>
+    <div class="reclub-banner-content">
+        <p class="reclub-banner-title">Book easier with Reclub</p>
+        <p class="reclub-banner-subtitle">Open in the app for the best experience</p>
+    </div>
+    <a href="reclub://club/YOUR_CLUB_ID" class="reclub-banner-btn" id="reclub-open-app-btn">
+        Open in Reclub App
+    </a>
+</div>
+
+<script>
+(function() {
+    // Reclub Banner - Inline JS for interactivity
+    var banner = document.getElementById('reclub-floating-banner');
+    var closeBtn = document.getElementById('reclub-banner-close');
+
+    if (closeBtn && banner) {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            banner.style.animation = 'none';
+            banner.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+            banner.style.transform = 'translateY(100%)';
+            banner.style.opacity = '0';
+            setTimeout(function() {
+                banner.style.display = 'none';
+            }, 300);
+        });
+    }
+
+    // Ensure banner is visible when page loads (mobile sticky support)
+    function ensureBannerVisibility() {
+        if (banner && banner.style.display !== 'none') {
+            banner.style.visibility = 'visible';
+            banner.style.opacity = '1';
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureBannerVisibility);
+    } else {
+        ensureBannerVisibility();
+    }
+
+    // Re-check visibility on resize (for mobile/desktop transitions)
+    window.addEventListener('resize', ensureBannerVisibility);
+})();
+</script>
