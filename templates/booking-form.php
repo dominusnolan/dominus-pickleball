@@ -382,10 +382,23 @@ if ( function_exists( 'WC' ) && WC()->cart ) {
             $booking = $cart_item['dp_booking'];
             // Only include if required keys exist.
             if ( ! empty( $booking['date'] ) && ! empty( $booking['courtName'] ) && ! empty( $booking['time'] ) ) {
+                $date       = sanitize_text_field( $booking['date'] );
+                $court_name = sanitize_text_field( $booking['courtName'] );
+                $time       = sanitize_text_field( $booking['time'] );
+
+                // Validate date format (YYYY-MM-DD).
+                if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+                    continue;
+                }
+                // Validate time format (e.g., "9am", "12pm", "10am").
+                if ( ! preg_match( '/^\d{1,2}(am|pm)$/i', $time ) ) {
+                    continue;
+                }
+
                 $cart_slots[] = array(
-                    'date'      => sanitize_text_field( $booking['date'] ),
-                    'courtName' => sanitize_text_field( $booking['courtName'] ),
-                    'time'      => sanitize_text_field( $booking['time'] ),
+                    'date'      => $date,
+                    'courtName' => $court_name,
+                    'time'      => $time,
                 );
             }
         }
@@ -519,8 +532,12 @@ $dp_ajax_data = array(
             }
 
             slotsForDate.forEach(function(cartSlot) {
+                // Escape values for safe use in jQuery attribute selectors.
+                var escapedCourtName = cartSlot.courtName.replace(/["\\]/g, '\\$&');
+                var escapedTime = cartSlot.time.replace(/["\\]/g, '\\$&');
+
                 // Find matching table cell by court name and time.
-                var cell = $('.time-slot[data-court-name="' + cartSlot.courtName + '"][data-time="' + cartSlot.time + '"]');
+                var cell = $('.time-slot[data-court-name="' + escapedCourtName + '"][data-time="' + escapedTime + '"]');
                 if (cell.length > 0 && cell.hasClass('available')) {
                     var slotId = cell.data('slot-id');
 
@@ -530,11 +547,16 @@ $dp_ajax_data = array(
                         var courtId = cell.data('court-id');
                         var time = cell.data('time');
 
-                        // Calculate hour from time string (e.g., "9am" -> 9, "2pm" -> 14).
+                        // Calculate hour from time string (e.g., "9am" -> 9, "2pm" -> 14, "12am" -> 0, "12pm" -> 12).
                         var hourMatch = time.match(/(\d+)/);
                         var hour = hourMatch ? parseInt(hourMatch[0], 10) : 0;
-                        if (time.toLowerCase().includes('pm') && !time.toLowerCase().includes('12pm')) {
+                        var timeLower = time.toLowerCase();
+                        if (timeLower.includes('12am')) {
+                            hour = 0;
+                        } else if (timeLower.includes('pm') && hour !== 12) {
                             hour += 12;
+                        } else if (timeLower.includes('am') && hour === 12) {
+                            hour = 0;
                         }
 
                         state.selectedSlots.push({
