@@ -641,8 +641,8 @@ $dp_ajax_data = array(
                 summary.classList.add('dp-summary-sticky');
                 container.classList.add('dp-summary-sticky-offset');
                 // Measure the actual panel height and set CSS variable with buffer
-                var panelHeight = summary.offsetHeight;
-                var buffer = 8;
+                const panelHeight = summary.offsetHeight;
+                const buffer = 8;
                 container.style.setProperty('--dp-sticky-offset', (panelHeight + buffer) + 'px');
             } else {
                 summary.classList.remove('dp-summary-sticky');
@@ -662,9 +662,9 @@ $dp_ajax_data = array(
         });
 
         // MutationObserver to watch for DOM changes in summary items list
-        var summaryItemsEl = document.getElementById('dp-selection-summary-items');
+        const summaryItemsEl = document.getElementById('dp-selection-summary-items');
         if (summaryItemsEl) {
-            var summaryObserver = new MutationObserver(function() {
+            const summaryObserver = new MutationObserver(function() {
                 setTimeout(updateSummarySticky, 50);
             });
             summaryObserver.observe(summaryItemsEl, { childList: true, subtree: true });
