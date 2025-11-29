@@ -8,7 +8,7 @@ if ( ! defined( 'WPINC' ) ) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-<form id="dp-booking-form" action="<?php echo esc_url( wc_get_cart_url() ); ?>" method="post">
+<form id="dp-booking-form" action="<?php echo esc_url( wc_get_checkout_url() ); ?>" method="post">
     <div id="dominus-pickleball-app" class="dp-container">
         
         <div class="dp-left-panel">

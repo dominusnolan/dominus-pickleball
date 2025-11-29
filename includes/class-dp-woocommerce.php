@@ -74,7 +74,7 @@ class DP_WooCommerce {
 
         WC()->session->set( 'dp_pending_booking_slots', null );
 
-        wp_redirect( wc_get_cart_url() );
+        wp_redirect( wc_get_checkout_url() );
         exit();
     }
 
