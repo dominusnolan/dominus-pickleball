@@ -83,11 +83,19 @@ class DP_WooCommerce {
         // De-duplicate slots before adding - track by slot key
         $unique_slots = array();
         foreach ( $slots as $key => $slot ) {
-            // Build slot key from slot data if not provided as key
+            // Build slot key from slot data if available
             if ( is_array( $slot ) && isset( $slot['date'], $slot['courtId'], $slot['time'] ) ) {
                 $slot_key = $this->build_slot_key( $slot['date'], $slot['courtId'], $slot['time'] );
             } else {
-                $slot_key = sanitize_text_field( $key );
+                // Fallback to key - validate it looks like a slot key format (date|courtId|time)
+                $sanitized_key = sanitize_text_field( $key );
+                // Check if key matches expected format: YYYY-MM-DD|number|time
+                if ( preg_match( '/^\d{4}-\d{2}-\d{2}\|\d+\|\d{1,2}(am|pm)$/i', $sanitized_key ) ) {
+                    $slot_key = $sanitized_key;
+                } else {
+                    // Skip invalid slot keys to prevent malformed entries
+                    continue;
+                }
             }
             
             // Skip if already in cart or already processed

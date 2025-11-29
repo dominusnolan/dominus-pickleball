@@ -398,11 +398,19 @@ if ( function_exists( 'WC' ) && WC()->cart ) {
                 }
 
                 // Build slot key for de-duplication
-                $slot_key = isset( $cart_item['dp_slot_key'] ) 
-                    ? sanitize_text_field( $cart_item['dp_slot_key'] ) 
-                    : $date . '|' . $court_name . '|' . $time;
+                // Prefer the stored dp_slot_key if available and valid, otherwise use booking data
+                $slot_key = '';
+                if ( isset( $cart_item['dp_slot_key'] ) ) {
+                    $slot_key = sanitize_text_field( $cart_item['dp_slot_key'] );
+                }
+                
+                // If no slot_key or it's invalid, build a de-duplication key from booking data
+                // Note: This fallback uses courtName since courtId may not be available in booking data
+                if ( empty( $slot_key ) ) {
+                    $slot_key = $date . '|' . $court_name . '|' . $time;
+                }
 
-                // Skip if we've already seen this slot
+                // Skip if we've already seen this slot (de-duplicate by slot key)
                 if ( isset( $seen_slot_keys[ $slot_key ] ) ) {
                     continue;
                 }
