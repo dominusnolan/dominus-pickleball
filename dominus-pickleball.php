@@ -43,6 +43,9 @@ class Dominus_Pickleball {
     }
 
     private function load_dependencies() {
+        // WooCommerce Integration
+        require_once DP_PLUGIN_DIR . 'includes/class-dp-assets.php';
+        
         // Admin settings
         require_once DP_PLUGIN_DIR . 'includes/class-dp-admin.php';
         // Shortcode for the booking form
@@ -51,12 +54,15 @@ class Dominus_Pickleball {
         require_once DP_PLUGIN_DIR . 'includes/class-dp-ajax.php';
         // WooCommerce Integration
         require_once DP_PLUGIN_DIR . 'includes/class-dp-woocommerce.php';
+
+        
     }
 
     private function init_hooks() {
         add_action( 'plugins_loaded', array( $this, 'check_woocommerce' ) );
 
         // Initialize classes
+        new DP_Assets();
         new DP_Admin();
         new DP_Shortcode();
         new DP_Ajax();
