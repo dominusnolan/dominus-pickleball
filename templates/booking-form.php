@@ -375,7 +375,9 @@ if ( ! defined( 'WPINC' ) ) {
 
 <?php
 // Build cart_slots array from WooCommerce cart items with dp_booking meta.
+// De-duplicate by slot key (date|courtId|time) to prevent duplicate items in summary.
 $cart_slots = array();
+$seen_slot_keys = array();
 if ( function_exists( 'WC' ) && WC()->cart ) {
     foreach ( WC()->cart->get_cart() as $cart_item ) {
         if ( isset( $cart_item['dp_booking'] ) && is_array( $cart_item['dp_booking'] ) ) {
@@ -395,16 +397,23 @@ if ( function_exists( 'WC' ) && WC()->cart ) {
                     continue;
                 }
 
+                // Build slot key for de-duplication
+                $slot_key = isset( $cart_item['dp_slot_key'] ) 
+                    ? sanitize_text_field( $cart_item['dp_slot_key'] ) 
+                    : $date . '|' . $court_name . '|' . $time;
+
+                // Skip if we've already seen this slot
+                if ( isset( $seen_slot_keys[ $slot_key ] ) ) {
+                    continue;
+                }
+                $seen_slot_keys[ $slot_key ] = true;
+
                 $slot_data = array(
                     'date'      => $date,
                     'courtName' => $court_name,
                     'time'      => $time,
+                    'slotKey'   => $slot_key,
                 );
-
-                // Include slot key if available for cart sync
-                if ( isset( $cart_item['dp_slot_key'] ) ) {
-                    $slot_data['slotKey'] = sanitize_text_field( $cart_item['dp_slot_key'] );
-                }
 
                 $cart_slots[] = $slot_data;
             }
@@ -431,7 +440,18 @@ $dp_ajax_data = array(
         var serverToday = ( dp_ajax && dp_ajax.today ? dp_ajax.today : (new Date()).toISOString().split('T')[0] );
 
         // Compute defaultDate: use first cart slot's date if available, otherwise serverToday.
-        var cartSlots = (dp_ajax && Array.isArray(dp_ajax.cart_slots)) ? dp_ajax.cart_slots : [];
+        // De-duplicate cartSlots by slotKey to ensure no duplicates in summary
+        var rawCartSlots = (dp_ajax && Array.isArray(dp_ajax.cart_slots)) ? dp_ajax.cart_slots : [];
+        var seenSlotKeys = {};
+        var cartSlots = [];
+        rawCartSlots.forEach(function(slot) {
+            var key = slot.slotKey || (slot.date + '|' + slot.courtName + '|' + slot.time);
+            if (!seenSlotKeys[key]) {
+                seenSlotKeys[key] = true;
+                cartSlots.push(slot);
+            }
+        });
+        
         var defaultDate = serverToday;
         if (cartSlots.length > 0 && cartSlots[0].date) {
             defaultDate = cartSlots[0].date;
