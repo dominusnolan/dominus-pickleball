@@ -374,11 +374,30 @@ if ( ! defined( 'WPINC' ) ) {
 </script>
 
 <?php
+// Build cart_slots array from WooCommerce cart items with dp_booking meta.
+$cart_slots = array();
+if ( function_exists( 'WC' ) && WC()->cart ) {
+    foreach ( WC()->cart->get_cart() as $cart_item ) {
+        if ( isset( $cart_item['dp_booking'] ) && is_array( $cart_item['dp_booking'] ) ) {
+            $booking = $cart_item['dp_booking'];
+            // Only include if required keys exist.
+            if ( ! empty( $booking['date'] ) && ! empty( $booking['courtName'] ) && ! empty( $booking['time'] ) ) {
+                $cart_slots[] = array(
+                    'date'      => sanitize_text_field( $booking['date'] ),
+                    'courtName' => sanitize_text_field( $booking['courtName'] ),
+                    'time'      => sanitize_text_field( $booking['time'] ),
+                );
+            }
+        }
+    }
+}
+
 $dp_ajax_data = array(
     'ajax_url'          => admin_url( 'admin-ajax.php' ),
     'nonce'             => wp_create_nonce( 'dp_booking_nonce' ),
     'is_user_logged_in' => is_user_logged_in(),
     'today'             => current_time( 'Y-m-d' ),
+    'cart_slots'        => $cart_slots,
 );
 ?>
 <script>var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;</script>
@@ -391,6 +410,13 @@ $dp_ajax_data = array(
 
         var serverToday = ( dp_ajax && dp_ajax.today ? dp_ajax.today : (new Date()).toISOString().split('T')[0] );
 
+        // Compute defaultDate: use first cart slot's date if available, otherwise serverToday.
+        var cartSlots = (dp_ajax && Array.isArray(dp_ajax.cart_slots)) ? dp_ajax.cart_slots : [];
+        var defaultDate = serverToday;
+        if (cartSlots.length > 0 && cartSlots[0].date) {
+            defaultDate = cartSlots[0].date;
+        }
+
         const state = {
             selectedDate: null,
             selectedSlots: [],
@@ -401,7 +427,7 @@ $dp_ajax_data = array(
         const datePicker = flatpickr("#dp-date-picker", {
             inline: true,
             dateFormat: "Y-m-d",
-            defaultDate: serverToday,
+            defaultDate: defaultDate,
             minDate: serverToday,
             disable: [
                 function(date) {
@@ -469,6 +495,67 @@ $dp_ajax_data = array(
             });
             table += '</tbody></table>';
             grid.html(table);
+
+            // Preselect cart slots for the currently selected date.
+            preselectCartSlots();
+        }
+
+        /**
+         * Preselect time slots from cart items for the currently selected date.
+         * Matches by court name and time, marks cells as selected, and populates state.selectedSlots.
+         */
+        function preselectCartSlots() {
+            if (!cartSlots || cartSlots.length === 0) {
+                return;
+            }
+
+            // Filter cart slots for the currently selected date.
+            var slotsForDate = cartSlots.filter(function(cs) {
+                return cs.date === state.selectedDate;
+            });
+
+            if (slotsForDate.length === 0) {
+                return;
+            }
+
+            slotsForDate.forEach(function(cartSlot) {
+                // Find matching table cell by court name and time.
+                var cell = $('.time-slot[data-court-name="' + cartSlot.courtName + '"][data-time="' + cartSlot.time + '"]');
+                if (cell.length > 0 && cell.hasClass('available')) {
+                    var slotId = cell.data('slot-id');
+
+                    // Avoid duplicates - check if already in state.selectedSlots.
+                    if (!state.selectedSlots.find(function(s) { return s.id === slotId; })) {
+                        // Extract courtId from the cell's data attribute.
+                        var courtId = cell.data('court-id');
+                        var time = cell.data('time');
+
+                        // Calculate hour from time string (e.g., "9am" -> 9, "2pm" -> 14).
+                        var hourMatch = time.match(/(\d+)/);
+                        var hour = hourMatch ? parseInt(hourMatch[0], 10) : 0;
+                        if (time.toLowerCase().includes('pm') && !time.toLowerCase().includes('12pm')) {
+                            hour += 12;
+                        }
+
+                        state.selectedSlots.push({
+                            id: slotId,
+                            courtId: courtId,
+                            courtName: cartSlot.courtName,
+                            time: time,
+                            date: state.selectedDate,
+                            hour: hour
+                        });
+
+                        // Mark cell as selected.
+                        cell.addClass('selected');
+                    }
+                }
+            });
+
+            // Update summary view after preselecting.
+            if (slotsForDate.length > 0) {
+                updateSummaryView();
+            }
         }
 
         $('#dp-time-slot-grid').on('click', '.time-slot.available', function() {
