@@ -314,8 +314,8 @@ class DP_WooCommerce {
                         'time'      => sanitize_text_field( $pending_slot['time'] ),
                     );
                     $cart_item_data['dp_slot_key'] = $slot_key;
-                    // Ensure uniqueness.
-                    $cart_item_data['unique_key'] = md5( microtime() . wp_rand() );
+                    // Ensure uniqueness using WordPress UUID function.
+                    $cart_item_data['unique_key'] = wp_generate_uuid4();
                     return $cart_item_data;
                 }
             }
@@ -330,8 +330,8 @@ class DP_WooCommerce {
                     'courtName' => sanitize_text_field( $slot['courtName'] ),
                     'time'      => sanitize_text_field( $slot['time'] ),
                 );
-                // Ensure uniqueness.
-                $cart_item_data['unique_key'] = md5( microtime() . wp_rand() );
+                // Ensure uniqueness using WordPress UUID function.
+                $cart_item_data['unique_key'] = wp_generate_uuid4();
             }
         }
         return $cart_item_data;

@@ -518,6 +518,7 @@ $dp_ajax_data = array(
                     if (response.success) {
                         if (onSuccess) onSuccess(response.data);
                     } else {
+                        // Slot might already be removed, don't treat as error
                         if (onSuccess) onSuccess(response.data);
                     }
                 },
