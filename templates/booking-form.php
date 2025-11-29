@@ -89,7 +89,7 @@ if ( ! defined( 'WPINC' ) ) {
                             <div class="dp-social-login-option">
                                 <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="phone"]' ) ); ?>
                             </div>
-                                <div class="dp-social-login-option">
+                            <div class="dp-social-login-option">
                                 <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="email"]' ) ); ?>
                             </div>
                         <?php else : ?>
@@ -240,10 +240,10 @@ if ( ! defined( 'WPINC' ) ) {
 #dominus-pickleball-app .flatpickr-prev-month,
 #dominus-pickleball-app .flatpickr-next-month { height: 38px; width: 38px; padding: 8px; }
 #dominus-pickleball-app .flatpickr-weekday { font-weight: 500; color: #959ea9; }
-#dominus-pickleball-app .flatpickr-day { border-radius: 50% !important; border: 1px solid #e0e0e0; height: 38px; width: 38px; line-height: 38px; margin: 1px auto; font-weight: 400; background: transparent; color: #333; }
+#dominus-pickleball-app .flatpickr-day { border-radius: 50% !important; border: 1px solid #e0e0e0; height: 38px; width: 38px; line-height: 38px; margin: 1px auto; font-weight: 400; background: transpa[...] }
 #dominus-pickleball-app .flatpickr-day.flatpickr-disabled,
 #dominus-pickleball-app .flatpickr-day.disabled,
-#dominus-pickleball-app .flatpickr-day[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed !important; color: #bbb !important; background: transparent !important; border-color: #e0e0e0 !important; }
+#dominus-pickleball-app .flatpickr-day[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed !important; color: #bbb !important; background: transparent !important; border-color: #e0e0e0 !importan[...] }
 #dominus-pickleball-app .flatpickr-day.prevMonthDay,
 #dominus-pickleball-app .flatpickr-day.nextMonthDay { border-color: transparent !important; color: #ccc; cursor: default; }
 #dominus-pickleball-app .flatpickr-day:not(.flatpickr-disabled):not(.disabled):not([aria-disabled="true"]):hover { background: #e9f5ff; }
@@ -268,9 +268,24 @@ if ( ! defined( 'WPINC' ) ) {
     .dp-legend { margin: 24px 0 0 0; flex-wrap: wrap; gap: 10px; font-size: 0.95em; }
     .dp-content { margin-top: 24px !important; font-size: 1em; word-break: break-word; }
     .dp-time-slot-table th, .dp-time-slot-table td { min-width: 60px; font-size: 0.95em; padding: 6px 2px; }
-    .dp-summary-panel.dp-summary-sticky { position: fixed; top: 0; left: 0; right: 0; width: 100vw; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border-radius: 0; margin: 0; padding: 1em; z-index: 1000; }
-    .dp-summary-sticky-offset { padding-top: 160px; }
-    /* Make toggle full-width on mobile for easier tap */
+    /* CHANGED: sticky summary at bottom instead of top */
+    .dp-summary-panel.dp-summary-sticky { 
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        width: 100vw;
+        background: #fff;
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.18);
+        border-radius: 0;
+        margin: 0;
+        padding: 1em 1em calc(1em + env(safe-area-inset-bottom, 12px));
+        z-index: 900;
+        border-top: 1px solid #ddd;
+    }
+    /* CHANGED: offset now applies bottom padding */
+    .dp-summary-sticky-offset { padding-bottom: 180px; }
     .dp-summary-toggle { width:100%; font-size:13px; }
 }
 
@@ -278,20 +293,23 @@ if ( ! defined( 'WPINC' ) ) {
 
 <style>
 @media (max-width: 768px) {
+    /* Duplicate earlier block replaced: ensure consistency if second media query retained */
     .dp-summary-panel.dp-summary-sticky {
         position: fixed;
-        top: 0;
         left: 0;
         right: 0;
+        bottom: 0;
+        top: auto;
         width: 100vw;
         background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        box-shadow: 0 -2px 12px rgba(0,0,0,0.18);
         border-radius: 0;
         margin: 0;
-        padding: 1em;
-        z-index: 1000;
+        padding: 1em 1em calc(1em + env(safe-area-inset-bottom, 12px));
+        z-index: 900;
+        border-top: 1px solid #ddd;
     }
-    .dp-summary-sticky-offset { padding-top: 160px; }
+    .dp-summary-sticky-offset { padding-bottom: 180px; }
     .av-main-nav-wrap{ display:none !important }
 }
 
@@ -515,8 +533,6 @@ $dp_ajax_data = array(
             if (groupCount > 1) {
                 toggleBtn.show();
                 const expanded = toggleBtn.attr('aria-expanded') === 'true';
-                // Default behavior: collapse if just added (first time) OR if not manually expanded.
-                // For simplicity, collapse whenever groupCount > 1 and we just rendered.
                 if (!expanded) {
                     summaryContainer.addClass('dp-collapsed');
                     toggleBtn.attr('aria-expanded', 'false')
@@ -640,7 +656,7 @@ $dp_ajax_data = array(
     position: fixed;
     bottom: 32px;
     right: 32px;
-    z-index: 2000;
+    z-index: 1 !important;
     min-width: 360px;
     max-width: 470px;
     background: #F1B83B;
@@ -652,6 +668,8 @@ $dp_ajax_data = array(
     gap: 22px;
     font-family: Helvetica, Arial, sans-serif;
 }
+footer{z-index:0 !important}
+    .cart_dropdown {display:none !important}
 .reclub-banner-left { display: flex; align-items: center; gap: 16px; }
 .reclub-banner-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; }
 .reclub-banner-icon svg { width: 32px; height: 32px; display: block; }
