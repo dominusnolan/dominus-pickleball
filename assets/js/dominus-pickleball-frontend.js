@@ -11,7 +11,18 @@
         );
 
         // Compute defaultDate: use first cart slot's date if available, otherwise serverToday.
-        var cartSlots = (dp_ajax && Array.isArray(dp_ajax.cart_slots)) ? dp_ajax.cart_slots : [];
+        // De-duplicate cartSlots by slotKey to ensure no duplicates in summary
+        var rawCartSlots = (dp_ajax && Array.isArray(dp_ajax.cart_slots)) ? dp_ajax.cart_slots : [];
+        var seenSlotKeys = {};
+        var cartSlots = [];
+        rawCartSlots.forEach(function(slot) {
+            var key = slot.slotKey || (slot.date + '|' + slot.courtName + '|' + slot.time);
+            if (!seenSlotKeys[key]) {
+                seenSlotKeys[key] = true;
+                cartSlots.push(slot);
+            }
+        });
+        
         var defaultDate = serverToday;
         if (cartSlots.length > 0 && cartSlots[0].date) {
             defaultDate = cartSlots[0].date;

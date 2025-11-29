@@ -72,10 +72,43 @@ class DP_WooCommerce {
             exit();
         }
 
-        WC()->session->set( 'dp_pending_booking_slots', $slots );
+        // Get existing slot keys from cart to avoid duplicates
+        $existing_slot_keys = array();
+        foreach ( WC()->cart->get_cart() as $cart_item ) {
+            if ( isset( $cart_item['dp_slot_key'] ) ) {
+                $existing_slot_keys[ $cart_item['dp_slot_key'] ] = true;
+            }
+        }
 
+        // De-duplicate slots before adding - track by slot key
+        $unique_slots = array();
         foreach ( $slots as $key => $slot ) {
-            WC()->cart->add_to_cart( $product_id, 1, 0, array(), array( 'dp_slot_key' => $key ) );
+            // Build slot key from slot data if available
+            if ( is_array( $slot ) && isset( $slot['date'], $slot['courtId'], $slot['time'] ) ) {
+                $slot_key = $this->build_slot_key( $slot['date'], $slot['courtId'], $slot['time'] );
+            } else {
+                // Fallback to key - validate it looks like a slot key format (date|courtId|time)
+                $sanitized_key = sanitize_text_field( $key );
+                // Check if key matches expected format: YYYY-MM-DD|number|time
+                if ( preg_match( '/^\d{4}-\d{2}-\d{2}\|\d+\|\d{1,2}(am|pm)$/i', $sanitized_key ) ) {
+                    $slot_key = $sanitized_key;
+                } else {
+                    // Skip invalid slot keys to prevent malformed entries
+                    continue;
+                }
+            }
+            
+            // Skip if already in cart or already processed
+            if ( isset( $existing_slot_keys[ $slot_key ] ) || isset( $unique_slots[ $slot_key ] ) ) {
+                continue;
+            }
+            $unique_slots[ $slot_key ] = $slot;
+        }
+
+        WC()->session->set( 'dp_pending_booking_slots', $unique_slots );
+
+        foreach ( $unique_slots as $slot_key => $slot ) {
+            WC()->cart->add_to_cart( $product_id, 1, 0, array(), array( 'dp_slot_key' => $slot_key ) );
         }
 
         WC()->session->set( 'dp_pending_booking_slots', null );
@@ -314,8 +347,8 @@ class DP_WooCommerce {
                         'time'      => sanitize_text_field( $pending_slot['time'] ),
                     );
                     $cart_item_data['dp_slot_key'] = $slot_key;
-                    // Ensure uniqueness using WordPress UUID function.
-                    $cart_item_data['unique_key'] = wp_generate_uuid4();
+                    // Use slot_key for uniqueness to prevent duplicate cart items for same slot
+                    $cart_item_data['unique_key'] = 'dp_slot_' . $slot_key;
                     return $cart_item_data;
                 }
             }
@@ -330,8 +363,8 @@ class DP_WooCommerce {
                     'courtName' => sanitize_text_field( $slot['courtName'] ),
                     'time'      => sanitize_text_field( $slot['time'] ),
                 );
-                // Ensure uniqueness using WordPress UUID function.
-                $cart_item_data['unique_key'] = wp_generate_uuid4();
+                // Use slot_key for uniqueness to prevent duplicate cart items for same slot
+                $cart_item_data['unique_key'] = 'dp_slot_' . $slot_key;
             }
         }
         return $cart_item_data;
