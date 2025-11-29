@@ -216,7 +216,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 .dp-selection-summary-items { flex-grow: 1; overflow-y: auto; max-height: 250px; }
-.dp-selection-summary-items.dp-collapsed { display:none; }
+.dp-selection-summary-items.dp-collapsed .dp-summary-item:not(:first-child) { display: none; }
 .dp-summary-placeholder { color: #888; text-align: center; margin-top: 30px; font-style: italic; }
 
 .dp-summary-item { display: grid; grid-template-areas: "date price" "time delete" "court court"; grid-template-columns: 1fr auto; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9em; }
@@ -284,8 +284,8 @@ if ( ! defined( 'WPINC' ) ) {
         z-index: 900;
         border-top: 1px solid #ddd;
     }
-    /* CHANGED: offset now applies bottom padding */
-    .dp-summary-sticky-offset { padding-bottom: 180px; }
+    /* CHANGED: offset now applies bottom padding - dynamic via CSS var */
+    .dp-summary-sticky-offset { padding-bottom: var(--dp-sticky-offset, 220px); }
     .dp-summary-toggle { width:100%; font-size:13px; }
 }
 
@@ -309,7 +309,7 @@ if ( ! defined( 'WPINC' ) ) {
         z-index: 900;
         border-top: 1px solid #ddd;
     }
-    .dp-summary-sticky-offset { padding-bottom: 180px; }
+    .dp-summary-sticky-offset { padding-bottom: var(--dp-sticky-offset, 220px); }
     .av-main-nav-wrap{ display:none !important }
 }
 
@@ -536,15 +536,18 @@ $dp_ajax_data = array(
                 if (!expanded) {
                     summaryContainer.addClass('dp-collapsed');
                     toggleBtn.attr('aria-expanded', 'false')
-                             .html(`<span class="dp-toggle-arrow">▼</span> Show details (${groupCount})`);
+                             .html(`<span class="dp-toggle-arrow">▼</span> Show More`);
                 } else {
                     summaryContainer.removeClass('dp-collapsed');
-                    toggleBtn.html(`<span class="dp-toggle-arrow">▲</span> Hide details (${groupCount})`);
+                    toggleBtn.html(`<span class="dp-toggle-arrow">▲</span> Hide Selections`);
                 }
             } else {
                 toggleBtn.hide().attr('aria-expanded', 'false');
                 summaryContainer.removeClass('dp-collapsed');
             }
+
+            // Recalculate sticky offset after summary view update
+            setTimeout(updateSummarySticky, 50);
         }
 
         // Toggle button handler
@@ -552,17 +555,19 @@ $dp_ajax_data = array(
             const btn = $(this);
             const summaryContainer = $('#dp-selection-summary-items');
             const currentlyExpanded = btn.attr('aria-expanded') === 'true';
-            const groupCount = $('.dp-summary-item').length;
 
             if (currentlyExpanded) {
                 summaryContainer.addClass('dp-collapsed');
                 btn.attr('aria-expanded', 'false')
-                   .html(`<span class="dp-toggle-arrow">▼</span> Show details (${groupCount})`);
+                   .html(`<span class="dp-toggle-arrow">▼</span> Show More`);
             } else {
                 summaryContainer.removeClass('dp-collapsed');
                 btn.attr('aria-expanded', 'true')
-                   .html(`<span class="dp-toggle-arrow">▲</span> Hide details (${groupCount})`);
+                   .html(`<span class="dp-toggle-arrow">▲</span> Hide Selections`);
             }
+
+            // Recalculate sticky offset after toggle
+            setTimeout(updateSummarySticky, 50);
         });
 
         function groupConsecutiveSlots(slots) {
@@ -622,18 +627,27 @@ $dp_ajax_data = array(
             const summary = document.querySelector('.dp-summary-panel');
             const container = document.querySelector('.dp-container');
             if (!summary || !container) return;
+
+            // On desktop, remove sticky classes and clear offset
             if (window.innerWidth > 768) {
                 summary.classList.remove('dp-summary-sticky');
                 container.classList.remove('dp-summary-sticky-offset');
+                container.style.removeProperty('--dp-sticky-offset');
                 return;
             }
+
             const selected = document.querySelectorAll('.time-slot.selected');
             if (selected.length > 0) {
                 summary.classList.add('dp-summary-sticky');
                 container.classList.add('dp-summary-sticky-offset');
+                // Measure the actual panel height and set CSS variable with buffer
+                const panelHeight = summary.offsetHeight;
+                const buffer = 8;
+                container.style.setProperty('--dp-sticky-offset', (panelHeight + buffer) + 'px');
             } else {
                 summary.classList.remove('dp-summary-sticky');
                 container.classList.remove('dp-summary-sticky-offset');
+                container.style.removeProperty('--dp-sticky-offset');
             }
         }
 
@@ -643,6 +657,19 @@ $dp_ajax_data = array(
             }
         });
         window.addEventListener('resize', updateSummarySticky);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(updateSummarySticky, 100);
+        });
+
+        // MutationObserver to watch for DOM changes in summary items list
+        const summaryItemsEl = document.getElementById('dp-selection-summary-items');
+        if (summaryItemsEl) {
+            const summaryObserver = new MutationObserver(function() {
+                setTimeout(updateSummarySticky, 50);
+            });
+            summaryObserver.observe(summaryItemsEl, { childList: true, subtree: true });
+        }
+
         updateSummarySticky();
     });
 
