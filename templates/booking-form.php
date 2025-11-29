@@ -782,7 +782,7 @@ footer{z-index:0 !important}
 </style>
 
 <div id="reclub-floating-banner">
-    <button class="reclub-banner-toggle" id="reclub-banner-toggle" aria-label="Hide banner" title="Hide banner">
+    <button type="button" class="reclub-banner-toggle" id="reclub-banner-toggle" aria-label="Hide banner" title="Hide banner">
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
     <div class="reclub-banner-left">
@@ -798,9 +798,9 @@ footer{z-index:0 !important}
             <span class="reclub-banner-subtitle">Open in the app for the best experience</span>
         </span>
     </div>
-    <button class="reclub-banner-btn" id="reclub-open-app-btn">Open in Reclub App</button>
+    <button type="button" class="reclub-banner-btn" id="reclub-open-app-btn">Open in Reclub App</button>
 </div>
-<button class="reclub-banner-minimized" id="reclub-banner-minimized" aria-label="Show banner" title="Open in Reclub App" style="display:none">
+<button type="button" class="reclub-banner-minimized" id="reclub-banner-minimized" aria-label="Show banner" title="Open in Reclub App" style="display:none">
     <img src="https://booking.dominusit.online/wp-content/uploads/2025/11/reclub.jpg" alt="Reclub Logo" />
 </button>
 
