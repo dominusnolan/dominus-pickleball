@@ -3,10 +3,11 @@
 if ( ! defined( 'WPINC' ) ) {
     die;
 }
-
-// We need to wrap the whole app or at least the part that submits in a form.
-// Let's create a form that will submit to the cart page.
 ?>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <form id="dp-booking-form" action="<?php echo esc_url( wc_get_cart_url() ); ?>" method="post">
     <div id="dominus-pickleball-app" class="dp-container">
         
@@ -23,6 +24,13 @@ if ( ! defined( 'WPINC' ) ) {
             <!-- The summary panel is now here -->
             <div class="dp-summary-panel">
                 <h3 style="font-size: 15px;color: #27ae60;margin-bottom: 0;">Your selection</h3>
+
+                <!-- Toggle button injected dynamically when >1 group -->
+                <button type="button" id="dp-summary-toggle" class="dp-summary-toggle" style="display:none"
+                        aria-expanded="false" aria-controls="dp-selection-summary-items">
+                    Show details (0)
+                </button>
+
                 <div id="dp-selection-summary-items" class="dp-selection-summary-items">
                     <p class="dp-summary-placeholder">Your selected slots will appear here.</p>
                 </div>
@@ -32,10 +40,8 @@ if ( ! defined( 'WPINC' ) ) {
                         <strong id="dp-summary-total-price">₱0.00</strong>
                     </div>
                     <?php if ( is_user_logged_in() ) : ?>
-                        <?php // User is logged in - show Book Now button ?>
                         <button type="submit" id="dp-add-to-cart-btn" class="dp-button" disabled>Book Now</button>
                     <?php else : ?>
-                        <?php // User is NOT logged in - show Login to Book button ?>
                         <button type="button" id="dp-login-to-book-btn" class="dp-button">Login to Book</button>
                     <?php endif; ?>
                 </div>
@@ -49,13 +55,11 @@ if ( ! defined( 'WPINC' ) ) {
             <div id="dp-time-slot-grid" class="dp-time-slot-grid">
                 <div class="dp-loader">Loading...</div>
             </div>
-            <!-- LEGEND MOVED HERE -->
             <div class="dp-legend">
                 <span class="dp-legend-item dp-booked"></span> Booked
                 <span class="dp-legend-item dp-selected"></span> Selected
                 <span class="dp-legend-item dp-unavailable"></span> Unavailable
             </div>
-            <!-- TEXT MOVED HERE -->
             <div class="dp-content" style="margin-top:20px">
                 <h3>Cancellation policy</h3>
                 <h4>NO RESCHEDULING, NO REFUND POLICY</h4>
@@ -65,7 +69,7 @@ if ( ! defined( 'WPINC' ) ) {
                 <p>If you wish to reschedule your booking, the request must be made at least 24 hours before your scheduled playtime.</p>
                 <p>Any rescheduling requests made less than 24 hours before your booking will not be acknowledged.</p>
                 <hr>
-                <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smooth operations.</b></p>
+                <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and s[...]</p>
             </div>
         </div>
 
@@ -78,7 +82,6 @@ if ( ! defined( 'WPINC' ) ) {
                     <p class="dp-social-login-subtitle">Choose your preferred login method:</p>
                     
                     <div class="dp-social-login-buttons">
-                        <?php // Nextend Social Login - Apple ?>
                         <?php if ( shortcode_exists( 'nextend_social_login' ) ) : ?>
                             <div class="dp-social-login-option">
                                 <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="apple"]' ) ); ?>
@@ -86,7 +89,7 @@ if ( ! defined( 'WPINC' ) ) {
                             <div class="dp-social-login-option">
                                 <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="phone"]' ) ); ?>
                             </div>
-                            <div class="dp-social-login-option">
+                                <div class="dp-social-login-option">
                                 <?php echo wp_kses_post( do_shortcode( '[nextend_social_login provider="email"]' ) ); ?>
                             </div>
                         <?php else : ?>
@@ -95,7 +98,6 @@ if ( ! defined( 'WPINC' ) ) {
                     </div>
                     
                     <?php 
-                    // Only show WooCommerce forms if registration is enabled
                     $wc_registration_enabled = class_exists( 'WooCommerce' ) && get_option( 'woocommerce_enable_myaccount_registration' ) === 'yes';
                     ?>
                     <?php if ( $wc_registration_enabled ) : ?>
@@ -112,17 +114,11 @@ if ( ! defined( 'WPINC' ) ) {
         <?php endif; ?>
 
     </div>
-    <?php // Add nonce and a container for hidden slot inputs ?>
     <?php wp_nonce_field( 'dp_add_slots_to_cart_action', 'dp_add_slots_nonce' ); ?>
     <input type="hidden" name="action" value="dp_add_slots_to_cart_form">
     <div id="dp-hidden-slots-container"></div>
 
 <style>
-/**
- * Frontend CSS for Dominus Pickleball Booking Plugin - Updated for 2-column Layout
- * Inlined to bypass static asset caching
- */
-
 :root {
     --dp-primary-color: #2c3e50;
     --dp-secondary-color: #34495e;
@@ -136,10 +132,9 @@ if ( ! defined( 'WPINC' ) ) {
     --dp-font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* Main Container - Back to 2-column Flex */
 .dp-container {
     display: flex;
-    flex-wrap: wrap; /* Allows wrapping on smaller screens */
+    flex-wrap: wrap;
     font-family: var(--dp-font-family);
     background-color: var(--dp-background-color);
     padding: 20px;
@@ -150,7 +145,6 @@ if ( ! defined( 'WPINC' ) ) {
     gap: 20px;
 }
 
-/* Left Panel - Calendar, Info, and Summary */
 .dp-left-panel {
     flex: 1;
     min-width: 320px;
@@ -159,42 +153,20 @@ if ( ! defined( 'WPINC' ) ) {
     gap: 20px;
 }
 
-.dp-header h2 {
-    color: var(--dp-primary-color);
-    margin-top: 0;
-}
+.dp-header h2 { color: var(--dp-primary-color); margin-top: 0; }
+.dp-header p { color: #7f8c8d; margin: 5px 0; }
 
-.dp-header p {
-    color: #7f8c8d;
-    margin: 5px 0;
-}
+.dp-right-panel { flex: 2; min-width: 600px; }
 
-/* Right Panel - Time Slots */
-.dp-right-panel {
-    flex: 2; /* Takes more space */
-    min-width: 600px;
-}
+.dp-booking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.dp-booking-header h3 { color: var(--dp-primary-color); margin: 0; }
 
-.dp-booking-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.dp-booking-header h3 {
-    color: var(--dp-primary-color);
-    margin: 0;
-}
-
-/* Legend */
 .dp-legend { display: flex; gap: 15px; margin-top: 30px !important;}
 .dp-legend-item { display: inline-block; width: 15px; height: 15px; border-radius: 3px; vertical-align: middle; margin-right: 5px; }
 .dp-legend .dp-booked { background-color: var(--dp-booked-color); }
 .dp-legend .dp-selected { background-color: var(--dp-selected-color); }
 .dp-legend .dp-unavailable { background-color: var(--dp-unavailable-color); border: 1px solid #ddd; }
 
-/* Time Slot Grid */
 .dp-time-slot-grid { overflow-x: auto; border: 1px solid var(--dp-grid-border-color); border-radius: 5px; }
 .dp-time-slot-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
 .dp-time-slot-table th, .dp-time-slot-table td { border: 1px solid var(--dp-grid-border-color); text-align: center; min-width: 80px; }
@@ -207,7 +179,6 @@ if ( ! defined( 'WPINC' ) ) {
 .time-slot.unavailable { background-color: var(--dp-unavailable-color); cursor: not-allowed; }
 .dp-loader { padding: 50px; text-align: center; font-size: 1.2em; color: #7f8c8d; }
 
-/* Summary Panel Styling (Now inside left panel) */
 .dp-summary-panel {
     background-color: #fdfdfd;
     border: 1px solid #e9e9e9;
@@ -218,250 +189,94 @@ if ( ! defined( 'WPINC' ) ) {
     margin-top:20px;
 }
 .dp-summary-panel h3 { margin-top: 0; color: var(--dp-primary-color); }
-.dp-selection-summary-items { flex-grow: 1; overflow-y: auto; max-height: 250px; /* Limit height and allow scroll */ }
+
+.dp-summary-toggle {
+    margin: 10px 0 0;
+    background: #eef5fa;
+    border: 1px solid #cfdce6;
+    color: var(--dp-primary-color);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-weight: 600;
+    letter-spacing: .5px;
+}
+.dp-summary-toggle:hover { background:#e3eef6; }
+.dp-summary-toggle .dp-toggle-arrow {
+    transition: transform .2s;
+    display:inline-block;
+}
+.dp-summary-toggle[aria-expanded="true"] .dp-toggle-arrow {
+    transform: rotate(180deg);
+}
+
+.dp-selection-summary-items { flex-grow: 1; overflow-y: auto; max-height: 250px; }
+.dp-selection-summary-items.dp-collapsed { display:none; }
 .dp-summary-placeholder { color: #888; text-align: center; margin-top: 30px; font-style: italic; }
+
 .dp-summary-item { display: grid; grid-template-areas: "date price" "time delete" "court court"; grid-template-columns: 1fr auto; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9em; }
 .dp-summary-item-date { grid-area: date; font-weight: bold; }
 .dp-summary-item-price { grid-area: price; font-weight: bold; }
 .dp-summary-item-time { grid-area: time; color: #555; }
 .dp-summary-item-court { grid-area: court; color: #777; font-size: 0.9em; }
 .dp-summary-item-delete { grid-area: delete; justify-self: end; cursor: pointer; color: #c0392b; }
+
 .dp-summary-footer { margin-top: auto; padding-top: 15px; border-top: 1px solid #ccc; }
 .dp-summary-total { display: flex; justify-content: space-between; font-size: 1.1em; margin-bottom: 15px; }
 .dp-summary-total strong { color: var(--dp-primary-color); }
+
 #dp-add-to-cart-btn { width: 100%; padding: 12px; font-size: 1.1em; border: none; border-radius: 5px; cursor: pointer; background-color: var(--dp-primary-color); color: white; }
 #dp-add-to-cart-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-
-/* ==========================================================================
-   Flatpickr Calendar Customization - High Specificity Fix
-   ========================================================================== */
-
-/* This hides the original input, as we are showing the calendar inline */
-#dominus-pickleball-app #dp-date-picker {
-    visibility: hidden;
-    height: 0;
-    padding: 0;
-    margin: 0;
-    border: none;
-}
-
-/* Main calendar container styling */
-#dominus-pickleball-app .flatpickr-calendar {
-    box-shadow: none !important;
-    width: 100% !important;
-    background-color: transparent !important;
-}
-
-/* Month and navigation arrows */
-#dominus-pickleball-app .flatpickr-month {
-    height: 56px;
-}
-#dominus-pickleball-app .flatpickr-current-month .cur-month {
-    font-size: 1.25em;
-    font-weight: 300;
-}
+#dominus-pickleball-app #dp-date-picker { visibility: hidden; height: 0; padding: 0; margin: 0; border: none; }
+#dominus-pickleball-app .flatpickr-calendar { box-shadow: none !important; width: 100% !important; background-color: transparent !important; }
+#dominus-pickleball-app .flatpickr-month { height: 56px; }
+#dominus-pickleball-app .flatpickr-current-month .cur-month { font-size: 1.25em; font-weight: 300; }
 #dominus-pickleball-app .flatpickr-prev-month,
-#dominus-pickleball-app .flatpickr-next-month {
-    height: 38px;
-    width: 38px;
-    padding: 8px;
-}
-
-/* Weekday headers (Sun, Mon, Tue...) */
-#dominus-pickleball-app .flatpickr-weekday {
-    font-weight: 500;
-    color: #959ea9;
-}
-
-/* Styling for each individual day */
-#dominus-pickleball-app .flatpickr-day {
-    border-radius: 50% !important;
-    border: 1px solid #e0e0e0;
-    height: 38px;
-    width: 38px;
-    line-height: 38px;
-    margin: 1px auto;
-    font-weight: 400;
-    background: transparent;
-    color: #333;
-}
-
-/* Disabled past days: make them visibly disabled and un-clickable */
+#dominus-pickleball-app .flatpickr-next-month { height: 38px; width: 38px; padding: 8px; }
+#dominus-pickleball-app .flatpickr-weekday { font-weight: 500; color: #959ea9; }
+#dominus-pickleball-app .flatpickr-day { border-radius: 50% !important; border: 1px solid #e0e0e0; height: 38px; width: 38px; line-height: 38px; margin: 1px auto; font-weight: 400; background: transparent; color: #333; }
 #dominus-pickleball-app .flatpickr-day.flatpickr-disabled,
 #dominus-pickleball-app .flatpickr-day.disabled,
-#dominus-pickleball-app .flatpickr-day[aria-disabled="true"] {
-    opacity: 0.4;
-    cursor: not-allowed !important;
-    color: #bbb !important;
-    background: transparent !important;
-    border-color: #e0e0e0 !important;
-}
-#dominus-pickleball-app .flatpickr-day.flatpickr-disabled:hover,
-#dominus-pickleball-app .flatpickr-day.disabled:hover,
-#dominus-pickleball-app .flatpickr-day[aria-disabled="true"]:hover {
-    background: transparent !important;
-}
-
-
-/* Hide border for days not in the current month */
+#dominus-pickleball-app .flatpickr-day[aria-disabled="true"] { opacity: 0.4; cursor: not-allowed !important; color: #bbb !important; background: transparent !important; border-color: #e0e0e0 !important; }
 #dominus-pickleball-app .flatpickr-day.prevMonthDay,
-#dominus-pickleball-app .flatpickr-day.nextMonthDay {
-    border-color: transparent !important;
-    color: #ccc;
-    cursor: default;
-}
-/* Prevent hover effect on out-of-month days */
-#dominus-pickleball-app .flatpickr-day.prevMonthDay:hover,
-#dominus-pickleball-app .flatpickr-day.nextMonthDay:hover {
-    background: transparent !important;
-}
+#dominus-pickleball-app .flatpickr-day.nextMonthDay { border-color: transparent !important; color: #ccc; cursor: default; }
+#dominus-pickleball-app .flatpickr-day:not(.flatpickr-disabled):not(.disabled):not([aria-disabled="true"]):hover { background: #e9f5ff; }
+#dominus-pickleball-app .flatpickr-day.today { border-color: var(--dp-accent-color); }
+#dominus-pickleball-app .flatpickr-day.today:not(.selected) { color: var(--dp-accent-color); }
+#dominus-pickleball-app .flatpickr-day.selected { background: var(--dp-accent-color) !important; border-color: var(--dp-accent-color) !important; color: #fff !important; }
+#dominus-pickleball-app .flatpickr-day.selected:hover { background: var(--dp-accent-color) !important; color: #fff !important; }
 
-/* Hover effect for valid days */
-#dominus-pickleball-app .flatpickr-day:not(.flatpickr-disabled):not(.disabled):not([aria-disabled="true"]):hover {
-    background: #e9f5ff;
-}
-
-/* Style for today's date */
-#dominus-pickleball-app .flatpickr-day.today {
-    border-color: var(--dp-accent-color);
-}
-#dominus-pickleball-app .flatpickr-day.today:not(.selected) {
-    color: var(--dp-accent-color);
-}
-
-/* Style for the selected date */
-#dominus-pickleball-app .flatpickr-day.selected {
-    background: var(--dp-accent-color) !important;
-    border-color: var(--dp-accent-color) !important;
-    color: #fff !important;
-}
-
-/* Ensure selected date style persists on hover */
-#dominus-pickleball-app .flatpickr-day.selected:hover {
-    background: var(--dp-accent-color) !important;
-    color: #fff !important;
-}
-
-/* ==========================================================================
-   Login/Sign-up Modal
-   ========================================================================== */
-
-.dp-modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgba(0,0,0,0.6);
-}
-
-.dp-modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 30px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 800px;
-    border-radius: 8px;
-    position: relative;
-}
-
-.dp-modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    position: absolute;
-    top: 10px;
-    right: 20px;
-}
-
+.dp-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
+.dp-modal-content { background-color: #fefefe; margin: 10% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 8px; position: relative; }
+.dp-modal-close { color: #aaa; float: right; font-size: 28px; font-weight: bold; position: absolute; top: 10px; right: 20px; }
 .dp-modal-close:hover,
-.dp-modal-close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
+.dp-modal-close:focus { color: black; text-decoration: none; cursor: pointer; }
+.dp-woocommerce-forms { display: flex; flex-wrap: wrap; gap: 40px; }
+.dp-woocommerce-forms > div { flex: 1; min-width: 280px; }
 
-.dp-woocommerce-forms {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 40px;
-}
-.dp-woocommerce-forms > div {
-    flex: 1;
-    min-width: 280px;
-}
-
-.dp-woocommerce-forms h2 {
-    margin-top: 0;
-    color: var(--dp-primary-color);
-}
-
-
-/* ===== Mobile Layout Improvements ===== */
 @media (max-width: 768px) {
-    .dp-container {
-        flex-direction: column;
-        gap: 0;
-        padding: 10px;
-    }
-    .dp-left-panel,
-    .dp-right-panel {
-        min-width: 0;
-        width: 100%;
-        padding: 0;
-    }
-    .dp-right-panel {
-        margin-top: 30px;
-    }
-    .dp-booking-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .dp-legend {
-        margin: 24px 0 0 0;
-        flex-wrap: wrap;
-        gap: 10px;
-        font-size: 0.95em;
-        
-    }
-    .dp-content {
-        margin-top: 24px !important;
-        font-size: 1em;
-        word-break: break-word;
-    }
-    .dp-time-slot-table th, .dp-time-slot-table td {
-        min-width: 60px;
-        font-size: 0.95em;
-        padding: 6px 2px;
-    }
-    /* Sticky Summary Panel */
-    .dp-summary-panel.dp-summary-sticky {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        width: 100vw;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        border-radius: 0;
-        margin: 0;
-        padding: 1em;
-        z-index: 1000;
-    }
-    .dp-summary-sticky-offset {
-        padding-top: 160px; /* Adjust to summary panel height */
-    }
+    .dp-container { flex-direction: column; gap: 0; padding: 10px; }
+    .dp-left-panel, .dp-right-panel { min-width: 0; width: 100%; padding: 0; }
+    .dp-right-panel { margin-top: 30px; }
+    .dp-booking-header { flex-direction: column; align-items: flex-start; }
+    .dp-legend { margin: 24px 0 0 0; flex-wrap: wrap; gap: 10px; font-size: 0.95em; }
+    .dp-content { margin-top: 24px !important; font-size: 1em; word-break: break-word; }
+    .dp-time-slot-table th, .dp-time-slot-table td { min-width: 60px; font-size: 0.95em; padding: 6px 2px; }
+    .dp-summary-panel.dp-summary-sticky { position: fixed; top: 0; left: 0; right: 0; width: 100vw; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border-radius: 0; margin: 0; padding: 1em; z-index: 1000; }
+    .dp-summary-sticky-offset { padding-top: 160px; }
+    /* Make toggle full-width on mobile for easier tap */
+    .dp-summary-toggle { width:100%; font-size:13px; }
 }
+
 </style>
 
 <style>
-/* Inline sticky summary styles to avoid static asset caching */
 @media (max-width: 768px) {
     .dp-summary-panel.dp-summary-sticky {
         position: fixed;
@@ -476,18 +291,13 @@ if ( ! defined( 'WPINC' ) ) {
         padding: 1em;
         z-index: 1000;
     }
-    .dp-summary-sticky-offset {
-        padding-top: 160px;
-    }
-.av-main-nav-wrap{ display:none !important }
-
+    .dp-summary-sticky-offset { padding-top: 160px; }
+    .av-main-nav-wrap{ display:none !important }
 }
 
-.flatpickr-innerContainer{ margin:0 auto; display:block  }
+.flatpickr-innerContainer{ margin:0 auto; display:block }
+.dp-summary-item-delete{ font-size: 20px;margin-top: 10px; }
 
-.dp-summary-item-delete{ font-size: 20px;margin-top: 10px;  }
-
-/* Login to Book button styles */
 #dp-login-to-book-btn {
     width: 100%;
     padding: 12px;
@@ -499,131 +309,53 @@ if ( ! defined( 'WPINC' ) ) {
     color: white;
     transition: background-color 0.2s ease;
 }
+#dp-login-to-book-btn:hover { background-color: var(--dp-secondary-color, #34495e); }
 
-#dp-login-to-book-btn:hover {
-    background-color: var(--dp-secondary-color, #34495e);
-}
-
-/* Social Login Modal Styles */
-.dp-social-login-modal {
-    max-width: 500px;
-}
-
-.dp-social-login-container {
-    text-align: center;
-}
-
-.dp-social-login-container h2 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: var(--dp-primary-color, #2c3e50);
-}
-
-.dp-social-login-subtitle {
-    color: #666;
-    margin-bottom: 25px;
-}
-
-.dp-social-login-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.dp-social-login-option {
-    display: flex;
-    justify-content: center;
-}
-
-.dp-social-login-unavailable {
-    color: #c0392b;
-    padding: 20px;
-    background-color: #fdf2f2;
-    border-radius: 5px;
-}
-
-.dp-social-login-container .dp-woocommerce-forms {
-    margin-top: 30px;
-    padding-top: 25px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.dp-social-login-container .dp-woocommerce-forms h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: var(--dp-primary-color, #2c3e50);
-    font-size: 1em;
-}
-
-.dp-social-login-container .dp-form-login {
-    text-align: left;
-}
+.dp-social-login-modal { max-width: 500px; }
+.dp-social-login-container { text-align: center; }
+.dp-social-login-container h2 { margin-top: 0; margin-bottom: 10px; color: var(--dp-primary-color, #2c3e50); }
+.dp-social-login-subtitle { color: #666; margin-bottom: 25px; }
+.dp-social-login-buttons { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+.dp-social-login-option { display: flex; justify-content: center; }
+.dp-social-login-unavailable { color: #c0392b; padding: 20px; background-color: #fdf2f2; border-radius: 5px; }
+.dp-social-login-container .dp-woocommerce-forms { margin-top: 30px; padding-top: 25px; border-top: 1px solid #e0e0e0; }
+.dp-social-login-container .dp-woocommerce-forms h3 { margin-top: 0; margin-bottom: 15px; color: var(--dp-primary-color, #2c3e50); font-size: 1em; }
+.dp-social-login-container .dp-form-login { text-align: left; }
 
 </style>
 
 <script>
 (function() {
-    // Login Modal functionality
     function initLoginModal() {
         var loginBtn = document.getElementById('dp-login-to-book-btn');
         var modal = document.getElementById('dp-login-modal');
-        
-        if (!loginBtn || !modal) {
-            return; // Exit if elements don't exist (user may be logged in)
-        }
-        
+        if (!loginBtn || !modal) { return; }
         var closeBtn = modal.querySelector('.dp-modal-close');
-
-        // Event handlers stored for cleanup
         function openModal(e) {
             e.preventDefault();
             modal.style.display = 'block';
-            // Add event listeners when modal opens
             document.addEventListener('keydown', handleEscapeKey);
             window.addEventListener('click', handleOutsideClick);
         }
-
         function closeModal() {
             modal.style.display = 'none';
-            // Remove event listeners when modal closes
             document.removeEventListener('keydown', handleEscapeKey);
             window.removeEventListener('click', handleOutsideClick);
         }
-
-        function handleEscapeKey(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        }
-
-        function handleOutsideClick(e) {
-            if (e.target === modal) {
-                closeModal();
-            }
-        }
-
-        // Open modal on Login to Book button click
+        function handleEscapeKey(e) { if (e.key === 'Escape') closeModal(); }
+        function handleOutsideClick(e) { if (e.target === modal) closeModal(); }
         loginBtn.addEventListener('click', openModal);
-
-        // Close modal on close button click
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeModal);
-        }
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
     }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initLoginModal);
     } else {
         initLoginModal();
     }
-
-   
 })();
 </script>
 
 <?php
-// Output the dp_ajax object for the inline booking script
 $dp_ajax_data = array(
     'ajax_url'          => admin_url( 'admin-ajax.php' ),
     'nonce'             => wp_create_nonce( 'dp_booking_nonce' ),
@@ -631,9 +363,7 @@ $dp_ajax_data = array(
     'today'             => current_time( 'Y-m-d' ),
 );
 ?>
-<script>
-var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
-</script>
+<script>var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;</script>
 
 <script>
 (function($, flatpickr, dp_ajax) {
@@ -641,21 +371,15 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
 
     $(function() {
 
-        // Defensive: Use server date if available, fallback to today
-        var serverToday = (
-            dp_ajax && dp_ajax.today
-                ? dp_ajax.today
-                : (new Date()).toISOString().split('T')[0]
-        );
+        var serverToday = ( dp_ajax && dp_ajax.today ? dp_ajax.today : (new Date()).toISOString().split('T')[0] );
 
         const state = {
             selectedDate: null,
             selectedSlots: [],
-            pricePerSlot: 0, // This will be fetched from backend
-            currencySymbol: '₱', // Default currency symbol
+            pricePerSlot: 0,
+            currencySymbol: '₱',
         };
 
-        // Initialize Flatpickr with server-provided today, disable past dates robustly
         const datePicker = flatpickr("#dp-date-picker", {
             inline: true,
             dateFormat: "Y-m-d",
@@ -664,17 +388,14 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
             disable: [
                 function(date) {
                     if (!serverToday) return false;
-                    // Use local timezone for both; set hours to midnight
-                    const todayParts = serverToday.split('-');
-                    const today = new Date(todayParts[0], todayParts[1] - 1, todayParts[2]);
+                    const p = serverToday.split('-');
+                    const today = new Date(p[0], p[1]-1, p[2]);
                     today.setHours(0,0,0,0);
-
                     date.setHours(0,0,0,0);
-
                     return date < today;
                 }
             ],
-            onChange: function(selectedDates, dateStr, instance) {
+            onChange: function(selectedDates, dateStr) {
                 if (selectedDates.length > 0) {
                     state.selectedDate = dateStr;
                     updateSelectedDateDisplay(selectedDates[0]);
@@ -684,14 +405,12 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
         });
 
         function updateSelectedDateDisplay(date) {
-            const options = { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' };
-            $('#dp-selected-date').text(date.toLocaleDateString('en-US', options));
+            $('#dp-selected-date').text(date.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }));
         }
 
         function fetchTimeSlots(date) {
             const grid = $('#dp-time-slot-grid');
             grid.html('<div class="dp-loader">Loading...</div>');
-
             $.ajax({
                 url: dp_ajax.ajax_url,
                 type: 'POST',
@@ -702,7 +421,7 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
                         state.currencySymbol = response.data.currency_symbol;
                         renderTimeSlotGrid(response.data);
                     } else {
-                        grid.html(`<div class="dp-loader">${response.data.message}</div>`);
+                        grid.html('<div class="dp-loader">'+ (response.data.message || 'No slots') +'</div>');
                     }
                 },
                 error: function() {
@@ -757,22 +476,26 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
 
         function updateSummaryView() {
             const summaryContainer = $('#dp-selection-summary-items');
+            const toggleBtn = $('#dp-summary-toggle');
             summaryContainer.empty();
 
             if (state.selectedSlots.length === 0) {
                 summaryContainer.html('<p class="dp-summary-placeholder">Your selected slots will appear here.</p>');
                 $('#dp-add-to-cart-btn').prop('disabled', true);
                 $('#dp-summary-total-price').html(`${state.currencySymbol}0.00`);
+                toggleBtn.hide().attr('aria-expanded', 'false');
                 return;
             }
 
             const groupedSlots = groupConsecutiveSlots(state.selectedSlots);
             let total = 0;
+            let groupCount = Object.keys(groupedSlots).length;
 
             Object.values(groupedSlots).forEach(group => {
                 const price = group.slots.length * state.pricePerSlot;
                 total += price;
-                const formattedDate = new Date(group.date.replace(/-/g, '/') + ' 00:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+                const formattedDate = new Date(group.date.replace(/-/g, '/') + ' 00:00:00')
+                    .toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
 
                 const itemHtml = `
                     <div class="dp-summary-item">
@@ -787,7 +510,44 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
 
             $('#dp-summary-total-price').html(`${state.currencySymbol}${total.toFixed(2)}`);
             $('#dp-add-to-cart-btn').prop('disabled', false);
+
+            // Toggle logic: show button if more than 1 group
+            if (groupCount > 1) {
+                toggleBtn.show();
+                const expanded = toggleBtn.attr('aria-expanded') === 'true';
+                // Default behavior: collapse if just added (first time) OR if not manually expanded.
+                // For simplicity, collapse whenever groupCount > 1 and we just rendered.
+                if (!expanded) {
+                    summaryContainer.addClass('dp-collapsed');
+                    toggleBtn.attr('aria-expanded', 'false')
+                             .html(`<span class="dp-toggle-arrow">▼</span> Show details (${groupCount})`);
+                } else {
+                    summaryContainer.removeClass('dp-collapsed');
+                    toggleBtn.html(`<span class="dp-toggle-arrow">▲</span> Hide details (${groupCount})`);
+                }
+            } else {
+                toggleBtn.hide().attr('aria-expanded', 'false');
+                summaryContainer.removeClass('dp-collapsed');
+            }
         }
+
+        // Toggle button handler
+        $('#dp-summary-toggle').on('click', function() {
+            const btn = $(this);
+            const summaryContainer = $('#dp-selection-summary-items');
+            const currentlyExpanded = btn.attr('aria-expanded') === 'true';
+            const groupCount = $('.dp-summary-item').length;
+
+            if (currentlyExpanded) {
+                summaryContainer.addClass('dp-collapsed');
+                btn.attr('aria-expanded', 'false')
+                   .html(`<span class="dp-toggle-arrow">▼</span> Show details (${groupCount})`);
+            } else {
+                summaryContainer.removeClass('dp-collapsed');
+                btn.attr('aria-expanded', 'true')
+                   .html(`<span class="dp-toggle-arrow">▲</span> Hide details (${groupCount})`);
+            }
+        });
 
         function groupConsecutiveSlots(slots) {
             const sorted = [...slots].sort((a, b) => a.courtId - b.courtId || a.hour - b.hour);
@@ -813,35 +573,28 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
 
         $('#dp-selection-summary-items').on('click', '.dp-summary-item-delete', function() {
             const groupKey = $(this).data('group-key');
-            const slotsToRemove = groupConsecutiveSlots(state.selectedSlots)[groupKey].slots;
-            
+            const groups = groupConsecutiveSlots(state.selectedSlots);
+            const slotsToRemove = groups[groupKey].slots;
             slotsToRemove.forEach(slotToRemove => {
                 $(`.time-slot[data-slot-id="${slotToRemove.id}"]`).removeClass('selected');
                 const index = state.selectedSlots.findIndex(s => s.id === slotToRemove.id);
                 if (index > -1) state.selectedSlots.splice(index, 1);
             });
-            
             updateSummaryView();
         });
 
-        $('#dp-booking-form').on('submit', function(e) {
+        $('#dp-booking-form').on('submit', function() {
             const btn = $('#dp-add-to-cart-btn');
             btn.prop('disabled', true).text('Processing...');
-
             const hiddenSlotsContainer = $('#dp-hidden-slots-container');
             hiddenSlotsContainer.empty();
-
             state.selectedSlots.forEach((slot, index) => {
                 Object.keys(slot).forEach(key => {
-                    const input = `<input type="hidden" name="slots[${index}][${key}]" value="${slot[key]}">`;
-                    hiddenSlotsContainer.append(input);
+                    hiddenSlotsContainer.append(`<input type="hidden" name="slots[${index}][${key}]" value="${slot[key]}">`);
                 });
             });
-
-            // The form will now submit naturally.
         });
 
-        // Initial load after flatpickr is initialized
         if (datePicker.selectedDates && datePicker.selectedDates.length > 0) {
             const initialDate = datePicker.selectedDates[0];
             state.selectedDate = datePicker.formatDate(initialDate, "Y-m-d");
@@ -849,19 +602,15 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
             fetchTimeSlots(state.selectedDate);
         }
 
-        // Sticky summary panel for mobile
         function updateSummarySticky() {
             const summary = document.querySelector('.dp-summary-panel');
             const container = document.querySelector('.dp-container');
-            if (!summary || !container) {
-                return;
-            }
+            if (!summary || !container) return;
             if (window.innerWidth > 768) {
                 summary.classList.remove('dp-summary-sticky');
                 container.classList.remove('dp-summary-sticky-offset');
                 return;
             }
-            // Check if at least one slot is selected
             const selected = document.querySelectorAll('.time-slot.selected');
             if (selected.length > 0) {
                 summary.classList.add('dp-summary-sticky');
@@ -872,17 +621,12 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
             }
         }
 
-        // Listen for slot clicks to update sticky state
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('time-slot') || e.target.classList.contains('dp-summary-item-delete')) {
-                setTimeout(updateSummarySticky, 50); // Wait for UI update
+                setTimeout(updateSummarySticky, 50);
             }
         });
-
-        // Handle window resize
         window.addEventListener('resize', updateSummarySticky);
-
-        // Initial check on page load
         updateSummarySticky();
     });
 
@@ -891,7 +635,6 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
 
 </form>
 
-<!-- Reclub Floating Banner - final design match (see image2) with phone icon and logo toggle -->
 <style>
 #reclub-floating-banner {
     position: fixed;
@@ -909,42 +652,12 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
     gap: 22px;
     font-family: Helvetica, Arial, sans-serif;
 }
-.reclub-banner-left {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.reclub-banner-icon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-}
-.reclub-banner-icon svg {
-    width: 32px;
-    height: 32px;
-    display: block;
-}
-.reclub-banner-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
-    justify-content: center;
-}
-.reclub-banner-title {
-    color: #4947CC;
-    font-weight: bold;
-    font-size: 14px;
-    margin: 0;
-    letter-spacing: 0.01em;
-}
-.reclub-banner-subtitle {
-    color: #232323;
-    font-size: 14px;
-    margin: 0;
-}
+.reclub-banner-left { display: flex; align-items: center; gap: 16px; }
+.reclub-banner-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: none; }
+.reclub-banner-icon svg { width: 32px; height: 32px; display: block; }
+.reclub-banner-content { display: flex; flex-direction: column; gap: 0; justify-content: center; }
+.reclub-banner-title { color: #4947CC; font-weight: bold; font-size: 14px; margin: 0; letter-spacing: 0.01em; }
+.reclub-banner-subtitle { color: #232323; font-size: 14px; margin: 0; }
 .reclub-banner-btn {
     background: #4947CC;
     border: none;
@@ -960,14 +673,8 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
     box-shadow: 0 1px 6px rgba(73,71,204,0.13);
     outline: none;
 }
-.reclub-banner-btn:disabled {
-    background: #bcbcf2;
-    cursor: not-allowed;
-    color: #4947cc;
-}
-.reclub-banner-btn:hover {
-    background: #2323a5;
-}
+.reclub-banner-btn:disabled { background: #bcbcf2; cursor: not-allowed; color: #4947cc; }
+.reclub-banner-btn:hover { background: #2323a5; }
 .reclub-banner-toggle {
     position: absolute;
     top: -19px;
@@ -985,13 +692,7 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
     z-index: 10;
     outline: none;
 }
-.reclub-banner-toggle svg {
-    width: 18px;
-    height: 18px;
-    stroke: #4947CC;
-    fill: none;
-    stroke-width: 3;
-}
+.reclub-banner-toggle svg { width: 18px; height: 18px; stroke: #4947CC; fill: none; stroke-width: 3; }
 @media (max-width: 650px) {
     #reclub-floating-banner {
         min-width: 0;
@@ -1033,17 +734,14 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
     background: #e2a726;
     box-shadow: 0 8px 24px rgba(241,184,59,0.21);
 }
-
 </style>
 
 <div id="reclub-floating-banner">
     <button class="reclub-banner-toggle" id="reclub-banner-toggle" aria-label="Hide banner" title="Hide banner">
-        <!-- Down arrow SVG, blue -->
         <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
     <div class="reclub-banner-left">
         <span class="reclub-banner-icon">
-            <!-- Phone SVG (blue to match design, not logo) -->
             <svg viewBox="0 0 24 24">
                 <rect x="5" y="2" width="14" height="20" rx="3" fill="#F1B83B" stroke="#4947CC" stroke-width="2"/>
                 <rect x="9" y="5" width="6" height="10" rx="1.5" fill="#fff" />
@@ -1055,11 +753,8 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
             <span class="reclub-banner-subtitle">Open in the app for the best experience</span>
         </span>
     </div>
-    <button class="reclub-banner-btn" id="reclub-open-app-btn">
-        Open in Reclub App
-    </button>
+    <button class="reclub-banner-btn" id="reclub-open-app-btn">Open in Reclub App</button>
 </div>
-<!-- Minimized Button: just the logo, clickable to restore full banner -->
 <button class="reclub-banner-minimized" id="reclub-banner-minimized" aria-label="Show banner" title="Open in Reclub App" style="display:none">
     <img src="https://booking.dominusit.online/wp-content/uploads/2025/11/reclub.jpg" alt="Reclub Logo" />
 </button>
@@ -1073,7 +768,6 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
     var deepLink = 'reclub://club/@dominus-club';
     var fallbackUrl = 'https://reclub.co/clubs/@dominus-club';
 
-    // Minimize the banner, show logo
     if (toggleBtn && banner && minimizedBtn) {
         toggleBtn.addEventListener('click', function() {
             banner.style.display = 'none';
@@ -1085,7 +779,6 @@ var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;
         });
     }
 
-    // Open app with fallback
     if (openAppBtn) {
         openAppBtn.addEventListener('click', function(e) {
             e.preventDefault();
