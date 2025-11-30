@@ -143,6 +143,32 @@ class DP_Admin {
             array( $this, 'render_court_blocked_times_table' ),
             'dominus-pickleball'
         );
+
+        // Holidays Section
+        add_settings_section(
+            'dp_holidays_section',
+            __( 'Holidays', 'dominus-pickleball' ),
+            null,
+            'dominus-pickleball'
+        );
+
+        add_settings_field(
+            'dp_full_day_holidays',
+            __( 'Full-Day Holidays', 'dominus-pickleball' ),
+            array( $this, 'render_full_day_holidays_field' ),
+            'dominus-pickleball',
+            'dp_holidays_section',
+            [ 'id' => 'dp_full_day_holidays', 'default' => '' ]
+        );
+
+        add_settings_field(
+            'dp_partial_day_holidays',
+            __( 'Partial-Day Holidays', 'dominus-pickleball' ),
+            array( $this, 'render_partial_day_holidays_field' ),
+            'dominus-pickleball',
+            'dp_holidays_section',
+            [ 'id' => 'dp_partial_day_holidays', 'default' => '' ]
+        );
     }
 
     /**
@@ -371,6 +397,30 @@ class DP_Admin {
     }
 
     /**
+     * Render full-day holidays field.
+     * Allows input of multiple dates (YYYY-MM-DD format, comma-separated).
+     */
+    public function render_full_day_holidays_field( $args ) {
+        $options = get_option( 'dp_settings' );
+        $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
+        
+        echo '<textarea id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" rows="4" cols="50" placeholder="' . esc_attr__( 'Enter dates in YYYY-MM-DD format, one per line (e.g., 2025-12-25)', 'dominus-pickleball' ) . '">' . esc_textarea( $value ) . '</textarea>';
+        echo '<p class="description">' . esc_html__( 'Enter full-day holiday dates, one per line. The booking calendar will disable these dates completely.', 'dominus-pickleball' ) . '</p>';
+    }
+
+    /**
+     * Render partial-day holidays field.
+     * Allows input of date + time range combinations.
+     */
+    public function render_partial_day_holidays_field( $args ) {
+        $options = get_option( 'dp_settings' );
+        $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
+        
+        echo '<textarea id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" rows="4" cols="50" placeholder="' . esc_attr__( 'Enter date and time range, one per line (e.g., 2025-12-24 14:00-18:00)', 'dominus-pickleball' ) . '">' . esc_textarea( $value ) . '</textarea>';
+        echo '<p class="description">' . esc_html__( 'Enter partial-day holidays with date and time range, one per line (format: YYYY-MM-DD HH:MM-HH:MM). These time slots will be unavailable on the specified dates.', 'dominus-pickleball' ) . '</p>';
+    }
+
+    /**
      * Sanitize settings fields.
      */
     public function sanitize_settings( $input ) {
@@ -423,6 +473,38 @@ class DP_Admin {
 
                 $sanitized_input[ $key ] = $sanitized_value;
             }
+        }
+
+        // Sanitize full-day holidays (list of dates, one per line)
+        if ( isset( $input['dp_full_day_holidays'] ) ) {
+            $lines = explode( "\n", $input['dp_full_day_holidays'] );
+            $valid_dates = array();
+            foreach ( $lines as $line ) {
+                $date = trim( sanitize_text_field( $line ) );
+                // Validate date format (YYYY-MM-DD)
+                if ( ! empty( $date ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+                    $valid_dates[] = $date;
+                }
+            }
+            $sanitized_input['dp_full_day_holidays'] = implode( "\n", $valid_dates );
+        } else {
+            $sanitized_input['dp_full_day_holidays'] = '';
+        }
+
+        // Sanitize partial-day holidays (date + time range, one per line)
+        if ( isset( $input['dp_partial_day_holidays'] ) ) {
+            $lines = explode( "\n", $input['dp_partial_day_holidays'] );
+            $valid_entries = array();
+            foreach ( $lines as $line ) {
+                $entry = trim( sanitize_text_field( $line ) );
+                // Validate format: YYYY-MM-DD HH:MM-HH:MM
+                if ( ! empty( $entry ) && preg_match( '/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}-\d{2}:\d{2}$/', $entry ) ) {
+                    $valid_entries[] = $entry;
+                }
+            }
+            $sanitized_input['dp_partial_day_holidays'] = implode( "\n", $valid_entries );
+        } else {
+            $sanitized_input['dp_partial_day_holidays'] = '';
         }
         
         return $sanitized_input;

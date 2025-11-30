@@ -429,12 +429,46 @@ if ( function_exists( 'WC' ) && WC()->cart ) {
     }
 }
 
+// Get holiday settings from admin options
+$dp_settings = get_option( 'dp_settings', array() );
+
+// Parse full-day holidays (dates to disable completely in the datepicker)
+$full_day_holidays = array();
+if ( ! empty( $dp_settings['dp_full_day_holidays'] ) ) {
+    $lines = explode( "\n", $dp_settings['dp_full_day_holidays'] );
+    foreach ( $lines as $line ) {
+        $date = trim( $line );
+        if ( ! empty( $date ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+            $full_day_holidays[] = $date;
+        }
+    }
+}
+
+// Parse partial-day holidays (date + time range to disable specific time slots)
+$partial_day_holidays = array();
+if ( ! empty( $dp_settings['dp_partial_day_holidays'] ) ) {
+    $lines = explode( "\n", $dp_settings['dp_partial_day_holidays'] );
+    foreach ( $lines as $line ) {
+        $entry = trim( $line );
+        // Format: YYYY-MM-DD HH:MM-HH:MM
+        if ( ! empty( $entry ) && preg_match( '/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})$/', $entry, $matches ) ) {
+            $partial_day_holidays[] = array(
+                'date'  => $matches[1],
+                'start' => $matches[2],
+                'end'   => $matches[3],
+            );
+        }
+    }
+}
+
 $dp_ajax_data = array(
-    'ajax_url'          => admin_url( 'admin-ajax.php' ),
-    'nonce'             => wp_create_nonce( 'dp_booking_nonce' ),
-    'is_user_logged_in' => is_user_logged_in(),
-    'today'             => current_time( 'Y-m-d' ),
-    'cart_slots'        => $cart_slots,
+    'ajax_url'             => admin_url( 'admin-ajax.php' ),
+    'nonce'                => wp_create_nonce( 'dp_booking_nonce' ),
+    'is_user_logged_in'    => is_user_logged_in(),
+    'today'                => current_time( 'Y-m-d' ),
+    'cart_slots'           => $cart_slots,
+    'full_day_holidays'    => $full_day_holidays,
+    'partial_day_holidays' => $partial_day_holidays,
 );
 ?>
 <script>var dp_ajax = <?php echo wp_json_encode( $dp_ajax_data ); ?>;</script>
@@ -600,6 +634,56 @@ $dp_ajax_data = array(
             return hour;
         }
 
+        // Get full-day holidays from settings (dates to completely disable in datepicker)
+        var fullDayHolidays = (dp_ajax && Array.isArray(dp_ajax.full_day_holidays)) ? dp_ajax.full_day_holidays : [];
+        
+        // Get partial-day holidays from settings (date + time range to disable specific slots)
+        var partialDayHolidays = (dp_ajax && Array.isArray(dp_ajax.partial_day_holidays)) ? dp_ajax.partial_day_holidays : [];
+
+        /**
+         * Check if a date is a full-day holiday.
+         * @param {Date} date - The date to check
+         * @returns {boolean} - True if the date is a full-day holiday
+         */
+        function isFullDayHoliday(date) {
+            if (fullDayHolidays.length === 0) return false;
+            var dateStr = date.getFullYear() + '-' + 
+                          String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                          String(date.getDate()).padStart(2, '0');
+            return fullDayHolidays.indexOf(dateStr) !== -1;
+        }
+
+        /**
+         * Check if a time slot is blocked by a partial-day holiday.
+         * @param {string} dateStr - The date in YYYY-MM-DD format
+         * @param {string} time - The time slot (e.g., "9am", "2pm")
+         * @returns {boolean} - True if the time slot is blocked by a partial-day holiday
+         */
+        function isPartialDayHolidayBlocked(dateStr, time) {
+            if (partialDayHolidays.length === 0) return false;
+            
+            // Convert time slot to 24-hour format for comparison
+            var slotHour = calculateHour(time);
+            
+            for (var i = 0; i < partialDayHolidays.length; i++) {
+                var holiday = partialDayHolidays[i];
+                if (holiday.date !== dateStr) continue;
+                
+                // Parse start and end times (format: HH:MM)
+                var startParts = holiday.start.split(':');
+                var endParts = holiday.end.split(':');
+                var startHour = parseInt(startParts[0], 10);
+                var endHour = parseInt(endParts[0], 10);
+                
+                // Check if the slot hour falls within the blocked range
+                // A slot is blocked if its start hour is within the blocked range
+                if (slotHour >= startHour && slotHour < endHour) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         const datePicker = flatpickr("#dp-date-picker", {
             inline: true,
             dateFormat: "Y-m-d",
@@ -607,12 +691,21 @@ $dp_ajax_data = array(
             minDate: serverToday,
             disable: [
                 function(date) {
-                    if (!serverToday) return false;
-                    const p = serverToday.split('-');
-                    const today = new Date(p[0], p[1]-1, p[2]);
-                    today.setHours(0,0,0,0);
-                    date.setHours(0,0,0,0);
-                    return date < today;
+                    // Disable past dates
+                    if (serverToday) {
+                        const p = serverToday.split('-');
+                        const today = new Date(p[0], p[1]-1, p[2]);
+                        today.setHours(0,0,0,0);
+                        date.setHours(0,0,0,0);
+                        if (date < today) {
+                            return true;
+                        }
+                    }
+                    // Disable full-day holidays
+                    if (isFullDayHoliday(date)) {
+                        return true;
+                    }
+                    return false;
                 }
             ],
             onChange: function(selectedDates, dateStr) {
@@ -660,7 +753,15 @@ $dp_ajax_data = array(
                 table += '<tr><td class="court-name">' + court.name + '</td>';
                 data.time_headers.forEach(time => {
                     const slotInfo = court.slots[time];
-                    let classes = 'time-slot ' + slotInfo.status;
+                    let status = slotInfo.status;
+                    
+                    // Check if this time slot is blocked by a partial-day holiday
+                    // Only apply if the slot would otherwise be available
+                    if (status === 'available' && isPartialDayHolidayBlocked(state.selectedDate, time)) {
+                        status = 'unavailable';
+                    }
+                    
+                    let classes = 'time-slot ' + status;
                     const slotId = state.selectedDate + '_' + court.id + '_' + time;
                     if (state.selectedSlots.find(s => s.id === slotId)) {
                         classes += ' selected';
