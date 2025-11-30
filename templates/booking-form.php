@@ -109,7 +109,7 @@ if ( ! defined( 'WPINC' ) ) {
                 <p>If you wish to reschedule your booking, the request must be made at least 24 hours before your scheduled playtime.</p>
                 <p>Any rescheduling requests made less than 24 hours before your booking will not be acknowledged.</p>
                 <hr>
-                <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and s[...]</p>
+                <p><b>We highly encourage all players to double-check their schedules before confirming a booking, as we strictly enforce our no rescheduling, no refund policy to ensure fairness and smooth operations for all guests.</b></p>
             </div>
         </div>
 
