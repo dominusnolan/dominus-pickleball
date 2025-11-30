@@ -288,6 +288,33 @@ if ( ! defined( 'WPINC' ) ) {
     .dp-summary-sticky-offset { padding-bottom: var(--dp-sticky-offset, 220px); }
     .dp-summary-toggle { width:100%; font-size:13px; }
 }
+    
+@media (max-width: 768px) {
+  #dominus-pickleball-app .flatpickr-prev-month,
+  #dominus-pickleball-app .flatpickr-next-month {
+      height: 54px !important;
+      width: 54px !important;
+      font-size: 2.4em !important;
+      padding: 16px !important;
+      line-height: 54px !important;
+      border-radius: 50% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: #eef5fa !important;
+      color: var(--dp-primary-color, #2c3e50) !important;
+      box-shadow: 0 2px 10px rgba(44,62,80,0.11);
+      border: 1px solid #cfdce6;
+      cursor: pointer;
+  }
+  #dominus-pickleball-app .flatpickr-prev-month svg,
+  #dominus-pickleball-app .flatpickr-next-month svg {
+      width: 32px;
+      height: 32px;
+  }
+    
+    .flatpickr-monthDropdown-months{ max-width:80% !important; margin: 0 auto !important;display:block}
+}
 
 </style>
 
