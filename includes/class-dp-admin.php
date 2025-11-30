@@ -194,9 +194,9 @@ class DP_Admin {
     }
 
     /**
-     * Get time options for dropdown selectors in 30-minute increments.
+     * Get time options for dropdown selectors in 1-hour increments.
      *
-     * @return array Array of time options (e.g., ['07:00', '07:30', '08:00', ...])
+     * @return array Array of time options (e.g., ['07:00', '08:00', '09:00', ...])
      */
     private function get_time_options() {
         $times = array();
@@ -205,7 +205,7 @@ class DP_Admin {
         
         while ( $start <= $end ) {
             $times[] = date( 'H:i', $start );
-            $start = strtotime( '+30 minutes', $start );
+            $start = strtotime( '+1 hour', $start );
         }
         
         return $times;
@@ -237,7 +237,8 @@ class DP_Admin {
         echo '<option value="">' . esc_html__( '-- Start Time --', 'dominus-pickleball' ) . '</option>';
         foreach ( $time_options as $time ) {
             $selected = ( $time === $start_time ) ? ' selected="selected"' : '';
-            echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+            $label = date( 'g:i A', strtotime( $time ) );
+            echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
         }
         echo '</select>';
         
@@ -248,7 +249,8 @@ class DP_Admin {
         echo '<option value="">' . esc_html__( '-- End Time --', 'dominus-pickleball' ) . '</option>';
         foreach ( $time_options as $time ) {
             $selected = ( $time === $end_time ) ? ' selected="selected"' : '';
-            echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+            $label = date( 'g:i A', strtotime( $time ) );
+            echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
         }
         echo '</select>';
     }
@@ -342,7 +344,8 @@ class DP_Admin {
                 echo '<option value="">--</option>';
                 foreach ( $time_options as $time ) {
                     $selected = ( $time === $start_time ) ? ' selected="selected"' : '';
-                    echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+                    $label = date( 'g:i A', strtotime( $time ) );
+                    echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
                 }
                 echo '</select>';
                 
@@ -353,7 +356,8 @@ class DP_Admin {
                 echo '<option value="">--</option>';
                 foreach ( $time_options as $time ) {
                     $selected = ( $time === $end_time ) ? ' selected="selected"' : '';
-                    echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $time ) . '</option>';
+                    $label = date( 'g:i A', strtotime( $time ) );
+                    echo '<option value="' . esc_attr( $time ) . '"' . $selected . '>' . esc_html( $label ) . '</option>';
                 }
                 echo '</select>';
                 
