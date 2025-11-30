@@ -398,7 +398,7 @@ class DP_Admin {
 
     /**
      * Render full-day holidays field.
-     * Allows input of multiple dates (YYYY-MM-DD format, comma-separated).
+     * Allows input of multiple dates (YYYY-MM-DD format, one per line).
      */
     public function render_full_day_holidays_field( $args ) {
         $options = get_option( 'dp_settings' );
@@ -481,9 +481,12 @@ class DP_Admin {
             $valid_dates = array();
             foreach ( $lines as $line ) {
                 $date = trim( sanitize_text_field( $line ) );
-                // Validate date format (YYYY-MM-DD)
+                // Validate date format (YYYY-MM-DD) and that it's a real date
                 if ( ! empty( $date ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
-                    $valid_dates[] = $date;
+                    $dt = DateTime::createFromFormat( 'Y-m-d', $date );
+                    if ( $dt && $dt->format( 'Y-m-d' ) === $date ) {
+                        $valid_dates[] = $date;
+                    }
                 }
             }
             $sanitized_input['dp_full_day_holidays'] = implode( "\n", $valid_dates );
@@ -498,7 +501,27 @@ class DP_Admin {
             foreach ( $lines as $line ) {
                 $entry = trim( sanitize_text_field( $line ) );
                 // Validate format: YYYY-MM-DD HH:MM-HH:MM
-                if ( ! empty( $entry ) && preg_match( '/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}-\d{2}:\d{2}$/', $entry ) ) {
+                if ( ! empty( $entry ) && preg_match( '/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})$/', $entry, $matches ) ) {
+                    $date_str  = $matches[1];
+                    $start_str = $matches[2];
+                    $end_str   = $matches[3];
+                    
+                    // Validate date
+                    $dt = DateTime::createFromFormat( 'Y-m-d', $date_str );
+                    if ( ! $dt || $dt->format( 'Y-m-d' ) !== $date_str ) {
+                        continue;
+                    }
+                    
+                    // Validate start and end times
+                    $start_dt = DateTime::createFromFormat( 'H:i', $start_str );
+                    $end_dt   = DateTime::createFromFormat( 'H:i', $end_str );
+                    if ( ! $start_dt || $start_dt->format( 'H:i' ) !== $start_str ) {
+                        continue;
+                    }
+                    if ( ! $end_dt || $end_dt->format( 'H:i' ) !== $end_str ) {
+                        continue;
+                    }
+                    
                     $valid_entries[] = $entry;
                 }
             }

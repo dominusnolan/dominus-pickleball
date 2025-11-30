@@ -439,7 +439,11 @@ if ( ! empty( $dp_settings['dp_full_day_holidays'] ) ) {
     foreach ( $lines as $line ) {
         $date = trim( $line );
         if ( ! empty( $date ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
-            $full_day_holidays[] = $date;
+            // Validate that it's a real date using DateTime
+            $dt = DateTime::createFromFormat( 'Y-m-d', $date );
+            if ( $dt && $dt->format( 'Y-m-d' ) === $date ) {
+                $full_day_holidays[] = $date;
+            }
         }
     }
 }
@@ -452,10 +456,30 @@ if ( ! empty( $dp_settings['dp_partial_day_holidays'] ) ) {
         $entry = trim( $line );
         // Format: YYYY-MM-DD HH:MM-HH:MM
         if ( ! empty( $entry ) && preg_match( '/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})$/', $entry, $matches ) ) {
+            $date_str  = $matches[1];
+            $start_str = $matches[2];
+            $end_str   = $matches[3];
+            
+            // Validate date
+            $dt = DateTime::createFromFormat( 'Y-m-d', $date_str );
+            if ( ! $dt || $dt->format( 'Y-m-d' ) !== $date_str ) {
+                continue;
+            }
+            
+            // Validate start and end times
+            $start_dt = DateTime::createFromFormat( 'H:i', $start_str );
+            $end_dt   = DateTime::createFromFormat( 'H:i', $end_str );
+            if ( ! $start_dt || $start_dt->format( 'H:i' ) !== $start_str ) {
+                continue;
+            }
+            if ( ! $end_dt || $end_dt->format( 'H:i' ) !== $end_str ) {
+                continue;
+            }
+            
             $partial_day_holidays[] = array(
-                'date'  => $matches[1],
-                'start' => $matches[2],
-                'end'   => $matches[3],
+                'date'  => $date_str,
+                'start' => $start_str,
+                'end'   => $end_str,
             );
         }
     }
@@ -655,6 +679,9 @@ $dp_ajax_data = array(
 
         /**
          * Check if a time slot is blocked by a partial-day holiday.
+         * Note: This booking system uses hourly slots (e.g., "9am", "10am"),
+         * so comparison by hours is appropriate. The admin should enter
+         * time ranges that align with hourly slots (e.g., "14:00-18:00" to block 2pm-6pm slots).
          * @param {string} dateStr - The date in YYYY-MM-DD format
          * @param {string} time - The time slot (e.g., "9am", "2pm")
          * @returns {boolean} - True if the time slot is blocked by a partial-day holiday
@@ -676,7 +703,7 @@ $dp_ajax_data = array(
                 var endHour = parseInt(endParts[0], 10);
                 
                 // Check if the slot hour falls within the blocked range
-                // A slot is blocked if its start hour is within the blocked range
+                // A slot starting at slotHour is blocked if slotHour is within [startHour, endHour)
                 if (slotHour >= startHour && slotHour < endHour) {
                     return true;
                 }
