@@ -90,7 +90,7 @@ if ( ! defined( 'WPINC' ) ) {
                  Mobile-friendly alternative to the grid table. Courts displayed as vertical
                  cards with time slots as horizontally-scrollable chips/buttons.
                  ==================================================================== -->
-            <div id="dp-time-slot-list" class="dp-time-slot-list" style="display: none;">
+            <div id="dp-time-slot-list" class="dp-time-slot-list">
                 <div class="dp-loader">Loading...</div>
             </div>
             <!-- END LIST/CHIP VIEW - Court Cards Container -->
@@ -462,7 +462,7 @@ if ( ! defined( 'WPINC' ) ) {
    LIST/CHIP VIEW - Court Card & Time Chip Styles
    ============================================================ */
 .dp-time-slot-list {
-    display: flex;
+    display: none; /* Hidden by default, shown via .dp-view-active class on mobile */
     flex-direction: column;
     gap: 16px;
 }
@@ -801,6 +801,9 @@ $dp_ajax_data = array(
     $(function() {
 
         var serverToday = ( dp_ajax && dp_ajax.today ? dp_ajax.today : (new Date()).toISOString().split('T')[0] );
+
+        // LIST/CHIP VIEW: Mobile breakpoint constant (matches CSS media queries)
+        const MOBILE_BREAKPOINT = 768;
 
         // Compute defaultDate: use first cart slot's date if available, otherwise serverToday.
         // De-duplicate cartSlots by slotKey to ensure no duplicates in summary
@@ -1194,42 +1197,8 @@ $dp_ajax_data = array(
                 
                 list.append(cardHtml);
             });
-            
-            // Preselect cart slots for the list view
-            preselectCartSlotsInListView();
         }
         /* END LIST/CHIP VIEW - Render List View */
-
-        /* ====================================================================
-           LIST/CHIP VIEW - Preselect cart slots in List View
-           ==================================================================== */
-        function preselectCartSlotsInListView() {
-            if (!cartSlots || cartSlots.length === 0) {
-                return;
-            }
-
-            var slotsForDate = cartSlots.filter(function(cs) {
-                return cs.date === state.selectedDate;
-            });
-
-            if (slotsForDate.length === 0) {
-                return;
-            }
-
-            slotsForDate.forEach(function(cartSlot) {
-                var escapedCourtName = cartSlot.courtName.replace(/["\\]/g, '\\$&');
-                var escapedTime = cartSlot.time.replace(/["\\]/g, '\\$&');
-
-                // Find matching chip in list view
-                var chip = $('.dp-time-chip[data-court-name="' + escapedCourtName + '"][data-time="' + escapedTime + '"]');
-                if (chip.length > 0 && chip.hasClass('available')) {
-                    chip.addClass('selected');
-                    // Update chip label
-                    chip.find('.dp-time-chip-label').text('Selected');
-                }
-            });
-        }
-        /* END LIST/CHIP VIEW - Preselect cart slots in List View */
 
         /**
          * Preselect time slots from cart items for the currently selected date.
@@ -1574,7 +1543,7 @@ $dp_ajax_data = array(
             if (!summary || !container) return;
 
             // On desktop, remove sticky classes and clear offset
-            if (window.innerWidth > 768) {
+            if (window.innerWidth > MOBILE_BREAKPOINT) {
                 summary.classList.remove('dp-summary-sticky');
                 container.classList.remove('dp-summary-sticky-offset');
                 container.style.removeProperty('--dp-sticky-offset');
@@ -1632,14 +1601,12 @@ $dp_ajax_data = array(
             state.viewMode = mode;
             
             if (mode === 'grid') {
-                // Show grid, hide list
+                // Show grid, hide list - using CSS classes only
                 if (timeSlotGrid) {
                     timeSlotGrid.classList.remove('dp-view-hidden');
-                    timeSlotGrid.style.display = '';
                 }
                 if (timeSlotList) {
                     timeSlotList.classList.remove('dp-view-active');
-                    timeSlotList.style.display = 'none';
                 }
                 // Update button states
                 if (viewGridBtn) {
@@ -1651,14 +1618,12 @@ $dp_ajax_data = array(
                     viewListBtn.setAttribute('aria-pressed', 'false');
                 }
             } else {
-                // Show list, hide grid
+                // Show list, hide grid - using CSS classes only
                 if (timeSlotGrid) {
                     timeSlotGrid.classList.add('dp-view-hidden');
-                    timeSlotGrid.style.display = 'none';
                 }
                 if (timeSlotList) {
                     timeSlotList.classList.add('dp-view-active');
-                    timeSlotList.style.display = '';
                 }
                 // Update button states
                 if (viewGridBtn) {
@@ -1686,7 +1651,7 @@ $dp_ajax_data = array(
 
         // On window resize, reset to grid view if going to desktop
         window.addEventListener('resize', function() {
-            if (window.innerWidth > 768 && state.viewMode === 'list') {
+            if (window.innerWidth > MOBILE_BREAKPOINT && state.viewMode === 'list') {
                 setViewMode('grid');
             }
         });
