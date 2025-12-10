@@ -1795,8 +1795,8 @@ footer{z-index:0 !important}
     var toggleBtn = document.getElementById('reclub-banner-toggle');
     var minimizedBtn = document.getElementById('reclub-banner-minimized');
     var openAppBtn = document.getElementById('reclub-open-app-btn');
-    var deepLink = 'reclub://club/@dominus-club';
-    var fallbackUrl = 'https://reclub.co/clubs/@dominus-club';
+    var deepLink = 'reclub://club/@match-point-sc';
+    var fallbackUrl = 'https://reclub.co/clubs/@match-point-sc';
 
     if (toggleBtn && banner && minimizedBtn) {
         toggleBtn.addEventListener('click', function() {
