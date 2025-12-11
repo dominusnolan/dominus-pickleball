@@ -640,32 +640,24 @@ if ( ! defined( 'WPINC' ) ) {
 <!-- END LIST/CHIP VIEW - CSS Styles -->
 
 <script>
+// Simple script to open the login modal when "Login to Book" button is clicked
+// The dp-modal-auth.js handles all modal content and closing behavior
 (function() {
-    function initLoginModal() {
+    function initLoginButton() {
         var loginBtn = document.getElementById('dp-login-to-book-btn');
         var modal = document.getElementById('dp-login-modal');
         if (!loginBtn || !modal) { return; }
-        var closeBtn = modal.querySelector('.dp-modal-close');
-        function openModal(e) {
+        
+        loginBtn.addEventListener('click', function(e) {
             e.preventDefault();
             modal.style.display = 'block';
-            document.addEventListener('keydown', handleEscapeKey);
-            window.addEventListener('click', handleOutsideClick);
-        }
-        function closeModal() {
-            modal.style.display = 'none';
-            document.removeEventListener('keydown', handleEscapeKey);
-            window.removeEventListener('click', handleOutsideClick);
-        }
-        function handleEscapeKey(e) { if (e.key === 'Escape') closeModal(); }
-        function handleOutsideClick(e) { if (e.target === modal) closeModal(); }
-        loginBtn.addEventListener('click', openModal);
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        });
     }
+    
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initLoginModal);
+        document.addEventListener('DOMContentLoaded', initLoginButton);
     } else {
-        initLoginModal();
+        initLoginButton();
     }
 })();
 </script>
