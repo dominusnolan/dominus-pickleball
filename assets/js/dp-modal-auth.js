@@ -397,6 +397,11 @@
          */
         function bindNextendButtonHandlers() {
             // Common Nextend button selectors combined into single delegated handler
+            // These selectors are based on Nextend Social Login's default markup:
+            // - .nsl-button: main button class
+            // - .nsl-container a: links within NSL containers (includes all provider buttons)
+            // - .nsl-button-google: specific Google button class
+            // - [data-plugin="nsl"]: data attribute used by NSL
             const nextendSelector = '.nsl-button, .nsl-container a, .nsl-button-google, [data-plugin="nsl"]';
 
             // Bind single delegated event handler for all Nextend buttons inside the modal
@@ -408,6 +413,9 @@
                 window.dpAuthInProgress = true;
                 
                 // Reset flag after timeout in case auth is cancelled or fails
+                // Note: 30 second timeout is generous for OAuth flows which typically
+                // complete within 5-10 seconds. If user cancels or closes the popup,
+                // this ensures the modal can be reopened after the timeout.
                 setTimeout(function() {
                     window.dpAuthInProgress = false;
                 }, state.nextendAuthTimeout);
