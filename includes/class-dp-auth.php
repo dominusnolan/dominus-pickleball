@@ -401,6 +401,10 @@ class DP_Auth {
     private function get_user_by_google_id( $google_id ) {
         global $wpdb;
         
+        // Note: Consider adding a database index for performance:
+        // CREATE INDEX idx_google_id ON {$wpdb->usermeta} (meta_key, meta_value(191));
+        // This can be added via plugin activation hook if needed for large installations
+        
         $user_id = $wpdb->get_var( $wpdb->prepare(
             "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = 'dp_google_id' AND meta_value = %s",
             $google_id
@@ -416,7 +420,9 @@ class DP_Auth {
      * @param string $google_id The Google user ID.
      */
     private function link_google_account( $user_id, $google_id ) {
-        update_user_meta( $user_id, 'dp_google_id', sanitize_text_field( $google_id ) );
+        // Store Google ID as-is - it's already validated by Google's token verification
+        // Using sanitize_text_field might corrupt the ID
+        update_user_meta( $user_id, 'dp_google_id', $google_id );
     }
 
     /**

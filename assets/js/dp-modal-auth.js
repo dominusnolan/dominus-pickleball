@@ -341,7 +341,8 @@
             }
 
             // Load Google Identity Services library
-            if (typeof google === 'undefined' || !google.accounts) {
+            // Use window.google to explicitly check global scope
+            if (typeof window.google === 'undefined' || !window.google.accounts) {
                 loadGoogleScript();
             } else {
                 renderGoogleButton();
@@ -358,7 +359,8 @@
             script.defer = true;
             script.onload = function() {
                 state.googleLoaded = true;
-                renderGoogleButton();
+                // Wait a bit for google object to be fully available
+                setTimeout(renderGoogleButton, 100);
             };
             script.onerror = function() {
                 console.error('Failed to load Google Sign-In library');
@@ -375,8 +377,9 @@
             }
 
             // Initialize Google Sign-In
-            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-                google.accounts.id.initialize({
+            // Use window.google to explicitly check global scope
+            if (typeof window.google !== 'undefined' && window.google.accounts && window.google.accounts.id) {
+                window.google.accounts.id.initialize({
                     client_id: dp_auth.google_client_id,
                     callback: handleGoogleCallback,
                     auto_select: false,
@@ -386,7 +389,7 @@
                 // Render button in login panel
                 const loginButtonContainer = document.getElementById('dp-google-signin-button-login');
                 if (loginButtonContainer) {
-                    google.accounts.id.renderButton(
+                    window.google.accounts.id.renderButton(
                         loginButtonContainer,
                         {
                             theme: 'outline',
@@ -401,7 +404,7 @@
                 // Render button in register panel
                 const registerButtonContainer = document.getElementById('dp-google-signin-button-register');
                 if (registerButtonContainer) {
-                    google.accounts.id.renderButton(
+                    window.google.accounts.id.renderButton(
                         registerButtonContainer,
                         {
                             theme: 'outline',
