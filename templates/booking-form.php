@@ -377,7 +377,7 @@ if ( ! defined( 'WPINC' ) ) {
         border-top: 1px solid #ddd;
     }
     .dp-summary-sticky-offset { padding-bottom: var(--dp-sticky-offset, 220px); }
-    .av-main-nav-wrap{ display:none !important }
+    
 }
 
 .flatpickr-innerContainer{ margin:0 auto; display:block }
