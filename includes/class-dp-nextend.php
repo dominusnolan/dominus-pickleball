@@ -25,30 +25,13 @@ class DP_Nextend {
      * @return bool True if Nextend is active, false otherwise.
      */
     public function is_active() {
-        // Check for the main Nextend class
-        // This is the most reliable way to detect Nextend Social Login Pro
-        return class_exists( 'NextendSocialLogin' );
+        // Check for the main Nextend class (primary check) or shortcode availability (fallback)
+        // The class check is the most reliable indicator of a fully functioning Nextend installation
+        // The shortcode check provides additional resilience for edge cases or unusual configurations
+        return class_exists( 'NextendSocialLogin' ) || shortcode_exists( 'nextend_social_login' );
     }
 
-    /**
-     * Check if Google provider is enabled in Nextend.
-     *
-     * @return bool True if Google is enabled, false otherwise.
-     */
-    public function is_google_enabled() {
-        if ( ! $this->is_active() ) {
-            return false;
-        }
 
-        // Check if the Google provider is enabled
-        // Nextend stores providers in separate options for each provider
-        $google_settings = get_option( 'nsl-google-settings', array() );
-        
-        return ! empty( $google_settings ) && 
-               isset( $google_settings['settings'] ) && 
-               isset( $google_settings['settings']['enabled'] ) && 
-               $google_settings['settings']['enabled'] === '1';
-    }
 
     /**
      * Render Nextend Social Login button for Google provider.
@@ -66,14 +49,6 @@ class DP_Nextend {
             return '<p class="dp-nextend-unavailable">' . esc_html( $message ) . '</p>';
         }
 
-        if ( ! $this->is_google_enabled() ) {
-            $message = apply_filters( 
-                'dp_nextend_google_disabled_message', 
-                __( 'Google sign-in is currently disabled.', 'dominus-pickleball' )
-            );
-            return '<p class="dp-nextend-unavailable">' . esc_html( $message ) . '</p>';
-        }
-
         // Use Nextend's shortcode to render Google button
         // The shortcode will render the button with proper OAuth flow
         $shortcode = apply_filters( 
@@ -82,7 +57,19 @@ class DP_Nextend {
             $context
         );
 
-        return do_shortcode( $shortcode );
+        $output = do_shortcode( $shortcode );
+
+        // If shortcode returns empty output, provider is likely disabled
+        // Strip tags and trim to check for actual content
+        if ( empty( strip_tags( trim( $output ) ) ) ) {
+            $message = apply_filters( 
+                'dp_nextend_google_disabled_message', 
+                __( 'Google sign-in is currently disabled.', 'dominus-pickleball' )
+            );
+            return '<p class="dp-nextend-unavailable">' . esc_html( $message ) . '</p>';
+        }
+
+        return $output;
     }
 
     /**
@@ -113,15 +100,6 @@ class DP_Nextend {
                    __( 'Nextend Social Login Pro is not installed. ', 'dominus-pickleball' ) .
                    '<a href="https://nextendweb.com/social-login/" target="_blank">' .
                    __( 'Get Nextend Social Login Pro', 'dominus-pickleball' ) .
-                   '</a></p></div>';
-        }
-
-        if ( ! $this->is_google_enabled() ) {
-            $nextend_settings_url = admin_url( 'admin.php?page=nextend-social-login' );
-            return '<div class="notice notice-info"><p>' .
-                   __( 'Google provider is not enabled in Nextend Social Login. ', 'dominus-pickleball' ) .
-                   '<a href="' . esc_url( $nextend_settings_url ) . '">' .
-                   __( 'Configure Nextend Social Login', 'dominus-pickleball' ) .
                    '</a></p></div>';
         }
 
