@@ -115,19 +115,21 @@ class DP_Assets {
         );
 
         // Register Password Toggle CSS
+        $password_toggle_css_file = DP_PLUGIN_DIR . 'assets/css/dp-password-toggle.css';
         wp_register_style(
             'dp-password-toggle',
             DP_PLUGIN_URL . 'assets/css/dp-password-toggle.css',
             array(),
-            filemtime( DP_PLUGIN_DIR . 'assets/css/dp-password-toggle.css' )
+            file_exists( $password_toggle_css_file ) ? filemtime( $password_toggle_css_file ) : DP_VERSION
         );
 
         // Register Password Toggle JS
+        $password_toggle_js_file = DP_PLUGIN_DIR . 'assets/js/dp-password-toggle.js';
         wp_register_script(
             'dp-password-toggle',
             DP_PLUGIN_URL . 'assets/js/dp-password-toggle.js',
             array( 'jquery' ),
-            filemtime( DP_PLUGIN_DIR . 'assets/js/dp-password-toggle.js' ),
+            file_exists( $password_toggle_js_file ) ? filemtime( $password_toggle_js_file ) : DP_VERSION,
             true
         );
 

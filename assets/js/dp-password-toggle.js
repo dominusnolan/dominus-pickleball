@@ -76,7 +76,7 @@
                     }
                 } catch (error) {
                     // Fallback: Recreate input if browser doesn't allow type change
-                    console.log('Browser does not allow type change, recreating input');
+                    // This is rare but can happen in older browsers
                     recreateInput(isShowing ? 'password' : 'text');
                 }
             }
@@ -124,17 +124,24 @@
                 }
 
                 // Rebind click event to new input's toggle button
-                $toggleButton.off('click').on('click', togglePasswordVisibility);
+                $toggleButton.off('click.dp-password').on('click.dp-password', togglePasswordVisibility);
             }
 
-            // Bind toggle button click event
-            $toggleButton.on('click', togglePasswordVisibility);
+            // Bind toggle button click event with namespaced event
+            $toggleButton.on('click.dp-password', togglePasswordVisibility);
 
             // Find the closest form and bind submit handler
             const $form = $input.closest('form');
             if ($form.length) {
+                // Use namespaced event to prevent duplicate handlers
+                const inputId = $input.attr('id') || 'input-' + Date.now();
+                const eventNamespace = 'submit.dp-password-' + inputId;
+                
+                // Remove any existing handler for this input
+                $form.off(eventNamespace);
+                
                 // Ensure password is hidden on form submit
-                $form.on('submit', function() {
+                $form.on(eventNamespace, function() {
                     if ($input.attr('type') === 'text') {
                         $input.attr('type', 'password');
                         $toggleButton.text('Show')
