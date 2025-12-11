@@ -13,7 +13,7 @@ if ( ! defined( 'WPINC' ) ) {
         
         <div class="dp-left-panel">
             <div class="dp-header">
-                <h2>MATCH POINT</h2>
+                <h2>MATCHPOINT</h2>
                 <p><span class="icon-location"></span>Sports Center</p>
                 <p><span class="icon-clock"></span> Each slot is 60 minutes.</p>
             </div>
