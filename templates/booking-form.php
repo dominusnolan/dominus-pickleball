@@ -1493,10 +1493,10 @@ $dp_ajax_data = array(
 
             Object.values(groups).forEach(group => {
                 const startTime = group.slots[0].time;
-                const endTimeHour = group.slots[group.slots.length - 1].hour + 1;
-                const endSuffix = endTimeHour >= 12 ? 'pm' : 'am';
-                const formattedEndHour = endTimeHour > 12 ? endTimeHour - 12 : (endTimeHour === 0 ? 12 : endTimeHour);
-                const endTime = formattedEndHour + endSuffix;
+                const endTimeHour24 = (group.slots[group.slots.length - 1].hour + 1) % 24;
+                const endSuffix = endTimeHour24 >= 12 ? 'pm' : 'am';
+                const endFormattedHour = (endTimeHour24 % 12 === 0) ? 12 : (endTimeHour24 % 12);
+                const endTime = endFormattedHour + endSuffix;
                 group.timeRange = startTime + ' - ' + endTime;
             });
             return groups;
