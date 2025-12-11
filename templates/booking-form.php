@@ -599,6 +599,8 @@ if ( ! defined( 'WPINC' ) ) {
     .dp-view-toggle {
         display: flex;
     }
+
+    .dp-view-toggle{margin-top: 10px !important}
     
     /* When list view is active, hide grid */
     .dp-time-slot-grid.dp-view-hidden {
