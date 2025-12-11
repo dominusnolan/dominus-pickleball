@@ -172,12 +172,6 @@
                 }
             });
 
-            // Prevent clicks inside modal from propagating to document
-            // This ensures Nextend button clicks don't trigger any document-level handlers
-            $('.dp-auth-modal-container').on('click', function(e) {
-                e.stopPropagation();
-            });
-
             // Close on Escape key
             $(document).on('keydown', function(e) {
                 if (e.key === 'Escape' && $('#dp-login-modal').is(':visible')) {
@@ -402,31 +396,24 @@
          * and set auth-in-progress flag
          */
         function bindNextendButtonHandlers() {
-            // Common Nextend button selectors
-            const nextendSelectors = [
-                '.nsl-button',
-                '.nsl-container a',
-                '.nsl-button-google',
-                '[data-plugin="nsl"]'
-            ];
+            // Common Nextend button selectors combined into single delegated handler
+            const nextendSelector = '.nsl-button, .nsl-container a, .nsl-button-google, [data-plugin="nsl"]';
 
-            // Bind to all possible Nextend button selectors inside the modal
-            nextendSelectors.forEach(function(selector) {
-                $('#dp-login-modal').on('click', selector, function(e) {
-                    // Stop event propagation to prevent modal-open handler from firing
-                    e.stopPropagation();
-                    
-                    // Set global flag to indicate auth is in progress
-                    window.dpAuthInProgress = true;
-                    
-                    // Reset flag after timeout in case auth is cancelled or fails
-                    setTimeout(function() {
-                        window.dpAuthInProgress = false;
-                    }, state.nextendAuthTimeout);
-                    
-                    // Let Nextend handle the navigation/popup
-                    // Don't prevent default as Nextend needs to process the click
-                });
+            // Bind single delegated event handler for all Nextend buttons inside the modal
+            $('#dp-login-modal').on('click', nextendSelector, function(e) {
+                // Stop event propagation to prevent modal-open handler from firing
+                e.stopPropagation();
+                
+                // Set global flag to indicate auth is in progress
+                window.dpAuthInProgress = true;
+                
+                // Reset flag after timeout in case auth is cancelled or fails
+                setTimeout(function() {
+                    window.dpAuthInProgress = false;
+                }, state.nextendAuthTimeout);
+                
+                // Let Nextend handle the navigation/popup
+                // Don't prevent default as Nextend needs to process the click
             });
         }
 

@@ -659,8 +659,9 @@ if ( ! defined( 'WPINC' ) ) {
                 return;
             }
             
-            // Check if modal is already visible
-            if (modal.style.display === 'block' || modal.offsetParent !== null) {
+            // Check if modal is already visible using computed style
+            var modalDisplay = window.getComputedStyle(modal).display;
+            if (modalDisplay !== 'none') {
                 return;
             }
             
