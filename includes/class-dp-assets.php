@@ -55,5 +55,90 @@ class DP_Assets {
                 'today'             => current_time( 'Y-m-d' ),
             )
         );
+
+        // Register Modal Authentication CSS
+        wp_register_style(
+            'dp-modal-auth',
+            DP_PLUGIN_URL . 'assets/css/dp-modal-auth.css',
+            array(),
+            filemtime( DP_PLUGIN_DIR . 'assets/css/dp-modal-auth.css' )
+        );
+
+        // Register Modal Authentication JS
+        wp_register_script(
+            'dp-modal-auth',
+            DP_PLUGIN_URL . 'assets/js/dp-modal-auth.js',
+            array( 'jquery' ),
+            filemtime( DP_PLUGIN_DIR . 'assets/js/dp-modal-auth.js' ),
+            true
+        );
+
+        // Localize modal authentication script
+        wp_localize_script(
+            'dp-modal-auth',
+            'dp_auth',
+            array(
+                'ajax_url'             => admin_url( 'admin-ajax.php' ),
+                'nonce'                => wp_create_nonce( 'dp_auth_nonce' ),
+                'google_client_id'     => $this->get_google_client_id(),
+                'lost_password_url'    => wp_lostpassword_url(),
+                'wc_generate_password' => get_option( 'woocommerce_registration_generate_password' ) === 'yes',
+                'show_terms'           => apply_filters( 'dp_require_terms_acceptance', false ),
+                'strings'              => array(
+                    'modal_title'         => __( 'Login or Sign Up to Book', 'dominus-pickleball' ),
+                    'modal_subtitle'      => __( 'Choose your preferred login method:', 'dominus-pickleball' ),
+                    'login_tab'           => __( 'Log in', 'dominus-pickleball' ),
+                    'register_tab'        => __( 'Register', 'dominus-pickleball' ),
+                    'username_label'      => __( 'Email or Username', 'dominus-pickleball' ),
+                    'email_label'         => __( 'Email Address', 'dominus-pickleball' ),
+                    'password_label'      => __( 'Password', 'dominus-pickleball' ),
+                    'password_hint'       => __( 'Minimum 6 characters', 'dominus-pickleball' ),
+                    'remember_me'         => __( 'Remember me', 'dominus-pickleball' ),
+                    'forgot_password'     => __( 'Forgot password?', 'dominus-pickleball' ),
+                    'terms_text'          => sprintf(
+                        __( 'I agree to the <a href="%s" target="_blank">Terms & Conditions</a> and <a href="%s" target="_blank">Privacy Policy</a>', 'dominus-pickleball' ),
+                        get_privacy_policy_url(),
+                        get_privacy_policy_url()
+                    ),
+                    'login_button'        => __( 'Log In', 'dominus-pickleball' ),
+                    'register_button'     => __( 'Create Account', 'dominus-pickleball' ),
+                    'or_continue_with'    => __( 'Or continue with', 'dominus-pickleball' ),
+                    'processing'          => __( 'Processing...', 'dominus-pickleball' ),
+                    'fill_required'       => __( 'Please fill in all required fields.', 'dominus-pickleball' ),
+                    'email_required'      => __( 'Please enter your email address.', 'dominus-pickleball' ),
+                    'password_required'   => __( 'Please enter your password.', 'dominus-pickleball' ),
+                    'terms_required'      => __( 'You must accept the terms and conditions.', 'dominus-pickleball' ),
+                    'network_error'       => __( 'Network error. Please try again.', 'dominus-pickleball' ),
+                    'google_processing'   => __( 'Signing in with Google...', 'dominus-pickleball' ),
+                ),
+            )
+        );
+
+        // Enqueue modal auth assets on frontend (not just on shortcode pages)
+        // This ensures the modal is available on all pages where users might need to login
+        if ( ! is_admin() ) {
+            wp_enqueue_style( 'dp-modal-auth' );
+            wp_enqueue_script( 'dp-modal-auth' );
+        }
+    }
+
+    /**
+     * Get Google Client ID from settings or constant.
+     *
+     * @return string Client ID or empty string.
+     */
+    private function get_google_client_id() {
+        // Check for constant first (preferred for production)
+        if ( defined( 'DP_GOOGLE_CLIENT_ID' ) ) {
+            return DP_GOOGLE_CLIENT_ID;
+        }
+
+        // Check for option in database
+        $settings = get_option( 'dp_settings', array() );
+        if ( isset( $settings['google_client_id'] ) && ! empty( $settings['google_client_id'] ) ) {
+            return $settings['google_client_id'];
+        }
+
+        return '';
     }
 }

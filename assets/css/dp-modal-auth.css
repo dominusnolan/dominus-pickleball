@@ -1,0 +1,353 @@
+/**
+ * Login/Registration Modal Styles
+ * Styles for the enhanced dp-login-modal with tabs and forms
+ */
+
+/* Modal base styles - reuse existing .dp-modal classes but enhance them */
+.dp-auth-modal-container {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.dp-auth-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--dp-primary-color, #2c3e50);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.dp-auth-subtitle {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 14px;
+}
+
+/* Tab Navigation */
+.dp-auth-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.dp-auth-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #666;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.dp-auth-tab:hover {
+    color: var(--dp-primary-color, #2c3e50);
+    background-color: rgba(44, 62, 80, 0.05);
+}
+
+.dp-auth-tab:focus {
+    outline: 2px solid var(--dp-accent-color, #3498db);
+    outline-offset: -2px;
+}
+
+.dp-auth-tab-active {
+    color: var(--dp-primary-color, #2c3e50);
+    border-bottom-color: var(--dp-accent-color, #3498db);
+    font-weight: 600;
+}
+
+/* Tab Panels */
+.dp-auth-panel {
+    display: none;
+    text-align: left;
+    animation: fadeIn 0.3s ease;
+}
+
+.dp-auth-panel-active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Form Styles */
+.dp-auth-form {
+    margin-bottom: 20px;
+}
+
+.dp-form-field {
+    margin-bottom: 20px;
+}
+
+.dp-form-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--dp-primary-color, #2c3e50);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.dp-form-field input[type="text"],
+.dp-form-field input[type="email"],
+.dp-form-field input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.dp-form-field input:focus {
+    outline: none;
+    border-color: var(--dp-accent-color, #3498db);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.dp-form-field input:invalid:not(:placeholder-shown) {
+    border-color: #e74c3c;
+}
+
+.dp-field-hint {
+    display: block;
+    margin-top: 5px;
+    color: #888;
+    font-size: 12px;
+}
+
+/* Checkbox Field */
+.dp-form-checkbox {
+    margin-bottom: 15px;
+}
+
+.dp-form-checkbox label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.dp-form-checkbox input[type="checkbox"] {
+    margin-top: 2px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.dp-form-checkbox input[type="checkbox"]:focus {
+    outline: 2px solid var(--dp-accent-color, #3498db);
+    outline-offset: 2px;
+}
+
+/* Button Styles */
+.dp-auth-button {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.dp-auth-button:focus {
+    outline: 2px solid var(--dp-accent-color, #3498db);
+    outline-offset: 2px;
+}
+
+.dp-auth-button-primary {
+    background-color: var(--dp-primary-color, #2c3e50);
+    color: white;
+}
+
+.dp-auth-button-primary:hover:not(:disabled) {
+    background-color: var(--dp-secondary-color, #34495e);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(44, 62, 80, 0.2);
+}
+
+.dp-auth-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Links */
+.dp-auth-links {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.dp-auth-link {
+    color: var(--dp-accent-color, #3498db);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.dp-auth-link:hover {
+    color: var(--dp-primary-color, #2c3e50);
+    text-decoration: underline;
+}
+
+.dp-auth-link:focus {
+    outline: 2px solid var(--dp-accent-color, #3498db);
+    outline-offset: 2px;
+}
+
+/* Divider */
+.dp-auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 25px 0 20px;
+}
+
+.dp-auth-divider::before,
+.dp-auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.dp-auth-divider span {
+    padding: 0 15px;
+    color: #888;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Google Sign-In Button Container */
+.dp-google-signin-button {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    min-height: 44px;
+}
+
+/* Messages */
+.dp-form-message {
+    display: none;
+    margin-bottom: 20px;
+}
+
+.dp-message {
+    padding: 12px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.dp-message-error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+}
+
+.dp-message-success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+}
+
+.dp-message-info {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dp-auth-title {
+        font-size: 20px;
+    }
+
+    .dp-auth-subtitle {
+        font-size: 13px;
+        margin-bottom: 20px;
+    }
+
+    .dp-auth-tab {
+        padding: 10px 15px;
+        font-size: 15px;
+    }
+
+    .dp-form-field input[type="text"],
+    .dp-form-field input[type="email"],
+    .dp-form-field input[type="password"] {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .dp-auth-button {
+        padding: 12px 16px;
+        font-size: 15px;
+    }
+
+    .dp-auth-divider {
+        margin: 20px 0 15px;
+    }
+}
+
+/* Ensure modal content has proper max-width and centering */
+.dp-modal-content.dp-social-login-modal {
+    max-width: 500px;
+    padding: 30px;
+}
+
+@media (max-width: 768px) {
+    .dp-modal-content.dp-social-login-modal {
+        width: 95%;
+        padding: 25px 20px;
+        margin: 5% auto;
+    }
+}
+
+/* Accessibility improvements */
+.dp-auth-tab[aria-selected="false"]:focus,
+.dp-form-field input:focus,
+.dp-auth-button:focus,
+.dp-auth-link:focus {
+    outline: 2px solid var(--dp-accent-color, #3498db);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .dp-auth-tab-active {
+        border-bottom-width: 3px;
+    }
+    
+    .dp-form-field input:focus {
+        outline-width: 3px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .dp-auth-panel {
+        animation: none;
+    }
+    
+    .dp-auth-button:hover {
+        transform: none;
+    }
+}

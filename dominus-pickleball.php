@@ -54,6 +54,8 @@ class Dominus_Pickleball {
         require_once DP_PLUGIN_DIR . 'includes/class-dp-ajax.php';
         // WooCommerce Integration
         require_once DP_PLUGIN_DIR . 'includes/class-dp-woocommerce.php';
+        // Authentication handling
+        require_once DP_PLUGIN_DIR . 'includes/class-dp-auth.php';
 
         
     }
@@ -67,6 +69,7 @@ class Dominus_Pickleball {
         new DP_Shortcode();
         new DP_Ajax();
         new DP_WooCommerce();
+        new DP_Auth();
         
         // Enqueue scripts and styles
         add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles_scripts' ) );

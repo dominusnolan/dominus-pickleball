@@ -107,6 +107,15 @@ class DP_Admin {
             [ 'id' => 'dp_slot_price', 'default' => '20.00' ]
         );
 
+        add_settings_field(
+            'google_client_id',
+            __( 'Google Client ID', 'dominus-pickleball' ),
+            array( $this, 'render_google_client_id_field' ),
+            'dominus-pickleball',
+            'dp_general_settings_section',
+            [ 'id' => 'google_client_id', 'default' => '' ]
+        );
+
         // Blocked Time Ranges Section
         add_settings_section(
             'dp_blocked_times_section',
@@ -217,6 +226,28 @@ class DP_Admin {
         $options = get_option( 'dp_settings' );
         $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
         echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" value="' . esc_attr( $value ) . '" placeholder="e.g., 20.00" />';
+    }
+
+    /**
+     * Render Google Client ID field.
+     */
+    public function render_google_client_id_field( $args ) {
+        $options = get_option( 'dp_settings' );
+        $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
+        
+        // Check if constant is defined
+        $constant_defined = defined( 'DP_GOOGLE_CLIENT_ID' );
+        
+        echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" value="' . esc_attr( $value ) . '" placeholder="' . esc_attr__( 'e.g., 123456789-abc.apps.googleusercontent.com', 'dominus-pickleball' ) . '" style="width: 400px;" ' . ( $constant_defined ? 'disabled' : '' ) . ' />';
+        
+        if ( $constant_defined ) {
+            echo '<p class="description">' . esc_html__( 'Google Client ID is defined in wp-config.php (DP_GOOGLE_CLIENT_ID constant)', 'dominus-pickleball' ) . '</p>';
+        } else {
+            echo '<p class="description">' . sprintf(
+                __( 'Enter your Google OAuth Client ID. See %s for setup instructions.', 'dominus-pickleball' ),
+                '<a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>'
+            ) . '</p>';
+        }
     }
 
     /**
@@ -429,6 +460,7 @@ class DP_Admin {
         $sanitized_input['dp_start_time'] = isset( $input['dp_start_time'] ) ? sanitize_text_field( $input['dp_start_time'] ) : '07:00';
         $sanitized_input['dp_end_time'] = isset( $input['dp_end_time'] ) ? sanitize_text_field( $input['dp_end_time'] ) : '23:00';
         $sanitized_input['dp_slot_price'] = isset( $input['dp_slot_price'] ) ? sanitize_text_field( $input['dp_slot_price'] ) : '20.00';
+        $sanitized_input['google_client_id'] = isset( $input['google_client_id'] ) ? sanitize_text_field( $input['google_client_id'] ) : '';
         
         // Sanitize blocked time ranges for each day of the week
         foreach ( $this->get_days_of_week() as $day ) {
