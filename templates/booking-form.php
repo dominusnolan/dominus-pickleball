@@ -652,6 +652,19 @@ if ( ! defined( 'WPINC' ) ) {
         
         loginBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            
+            // Defensive checks to prevent reopening during OAuth flow or if already visible
+            // Check if auth is in progress (set by Nextend button handler)
+            if (window.dpAuthInProgress) {
+                return;
+            }
+            
+            // Check if modal is already visible using computed style
+            var modalDisplay = window.getComputedStyle(modal).display;
+            if (modalDisplay !== 'none') {
+                return;
+            }
+            
             modal.style.display = 'block';
         });
     }

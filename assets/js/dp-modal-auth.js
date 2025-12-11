@@ -18,6 +18,9 @@
             nextendAuthTimeout: 30000 // Timeout (ms) for Nextend auth completion detection
         };
 
+        // Global flag to prevent modal from reopening during OAuth flow
+        window.dpAuthInProgress = window.dpAuthInProgress || false;
+
         /**
          * Initialize the modal authentication UI
          */
@@ -161,8 +164,9 @@
             // Modal close
             $('.dp-modal-close').on('click', closeModal);
             
-            // Close on outside click
+            // Close on outside click - but not on clicks inside the modal content
             $('#dp-login-modal').on('click', function(e) {
+                // Only close if clicking the backdrop (not inside .dp-auth-modal-container)
                 if (e.target.id === 'dp-login-modal') {
                     closeModal();
                 }
@@ -368,6 +372,10 @@
                         if (typeof window.NSL !== 'undefined' && typeof window.NSL.init === 'function') {
                             window.NSL.init();
                         }
+
+                        // Bind click handlers to Nextend buttons to prevent event bubbling
+                        // This prevents our modal-open handler from re-triggering
+                        bindNextendButtonHandlers();
                     } else {
                         // Show fallback message if button can't be rendered
                         const fallbackMsg = '<p class="dp-nextend-unavailable">' + 
@@ -384,6 +392,40 @@
         }
 
         /**
+         * Bind click handlers to Nextend buttons to stop event propagation
+         * and set auth-in-progress flag
+         */
+        function bindNextendButtonHandlers() {
+            // Common Nextend button selectors combined into single delegated handler
+            // These selectors are based on Nextend Social Login's default markup:
+            // - .nsl-button: main button class
+            // - .nsl-container a: links within NSL containers (includes all provider buttons)
+            // - .nsl-button-google: specific Google button class
+            // - [data-plugin="nsl"]: data attribute used by NSL
+            const nextendSelector = '.nsl-button, .nsl-container a, .nsl-button-google, [data-plugin="nsl"]';
+
+            // Bind single delegated event handler for all Nextend buttons inside the modal
+            $('#dp-login-modal').on('click', nextendSelector, function(e) {
+                // Stop event propagation to prevent modal-open handler from firing
+                e.stopPropagation();
+                
+                // Set global flag to indicate auth is in progress
+                window.dpAuthInProgress = true;
+                
+                // Reset flag after timeout in case auth is cancelled or fails
+                // Note: 30 second timeout is generous for OAuth flows which typically
+                // complete within 5-10 seconds. If user cancels or closes the popup,
+                // this ensures the modal can be reopened after the timeout.
+                setTimeout(function() {
+                    window.dpAuthInProgress = false;
+                }, state.nextendAuthTimeout);
+                
+                // Let Nextend handle the navigation/popup
+                // Don't prevent default as Nextend needs to process the click
+            });
+        }
+
+        /**
          * Setup listeners for Nextend authentication completion
          * Nextend opens a popup window, we need to detect when auth is complete
          */
@@ -394,10 +436,8 @@
 
             // Listen for window focus events (when popup closes)
             // This is the primary way to detect Nextend auth completion
-            let isAuthInProgress = false;
-            
             $(window).on('focus', function() {
-                if (isAuthInProgress) {
+                if (window.dpAuthInProgress) {
                     // Small delay to allow Nextend to complete its process
                     setTimeout(function() {
                         // Check if user is now logged in by attempting to reload
@@ -405,17 +445,6 @@
                         window.location.reload();
                     }, 500);
                 }
-            });
-
-            // Track when Nextend buttons are clicked
-            $(document).on('click', '[data-plugin="nsl"], .nsl-button, .nsl-container a', function() {
-                isAuthInProgress = true;
-                
-                // Reset flag after timeout in case auth is cancelled or fails
-                // Use configurable timeout from state
-                setTimeout(function() {
-                    isAuthInProgress = false;
-                }, state.nextendAuthTimeout);
             });
         }
 
@@ -453,6 +482,8 @@
         function closeModal() {
             $('#dp-login-modal').hide();
             clearMessages();
+            // Reset auth-in-progress flag when modal closes
+            window.dpAuthInProgress = false;
             // Reset to login tab
             if (state.currentTab !== 'login') {
                 $('.dp-auth-tab[data-tab="login"]').trigger('click');
