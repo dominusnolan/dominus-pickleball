@@ -52,7 +52,11 @@ if ( ! defined( 'WPINC' ) ) {
             <div class="dp-booking-header">
                 <h3>Select slots for <span id="dp-selected-date"></span></h3>
             </div>
-            
+            <div class="dp-legend">
+                <span class="dp-legend-item dp-booked"></span> Booked
+                <span class="dp-legend-item dp-selected"></span> Selected
+                <span class="dp-legend-item dp-unavailable"></span> Unavailable
+            </div>
             <!-- ====================================================================
                  LIST/CHIP VIEW - Mobile View Mode Toggle
                  Shows only on mobile (<=768px). Allows switching between Grid and List views.
@@ -95,11 +99,7 @@ if ( ! defined( 'WPINC' ) ) {
             </div>
             <!-- END LIST/CHIP VIEW - Court Cards Container -->
             
-            <div class="dp-legend">
-                <span class="dp-legend-item dp-booked"></span> Booked
-                <span class="dp-legend-item dp-selected"></span> Selected
-                <span class="dp-legend-item dp-unavailable"></span> Unavailable
-            </div>
+            
             <div class="dp-content" style="margin-top:20px">
                 <h3>Cancellation policy</h3>
                 <h4>NO RESCHEDULING, NO REFUND POLICY</h4>
@@ -201,7 +201,7 @@ if ( ! defined( 'WPINC' ) ) {
 .dp-booking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .dp-booking-header h3 { color: var(--dp-primary-color); margin: 0; }
 
-.dp-legend { display: flex; gap: 15px; margin-top: 30px !important;}
+.dp-legend { display: flex; gap: 15px; margin-top: 15px !important;margin-bottom: 10px;margin-left: 5px;}
 .dp-legend-item { display: inline-block; width: 15px; height: 15px; border-radius: 3px; vertical-align: middle; margin-right: 5px; }
 .dp-legend .dp-booked { background-color: var(--dp-booked-color); }
 .dp-legend .dp-selected { background-color: var(--dp-selected-color); }
