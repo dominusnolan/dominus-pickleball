@@ -124,10 +124,11 @@ class DP_Assets {
 
     /**
      * Check if Nextend Social Login Pro plugin is active.
+     * Uses the main NextendSocialLogin class as the identifier.
      *
      * @return bool True if Nextend is active, false otherwise.
      */
     private function is_nextend_active() {
-        return class_exists( 'NextendSocialLogin' ) || function_exists( 'NextendSocialLogin' );
+        return class_exists( 'NextendSocialLogin' );
     }
 }

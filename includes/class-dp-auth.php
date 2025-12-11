@@ -244,32 +244,7 @@ class DP_Auth {
         set_transient( 'dp_nextend_register_' . $user_id, true, 60 );
     }
 
-    /**
-     * Check if Nextend Social Login Pro plugin is active.
-     *
-     * @return bool True if Nextend is active, false otherwise.
-     */
-    public function is_nextend_active() {
-        // Check if Nextend Social Login Pro is installed and active
-        return class_exists( 'NextendSocialLogin' ) || function_exists( 'NextendSocialLogin' );
-    }
 
-    /**
-     * Check if Google provider is enabled in Nextend.
-     *
-     * @return bool True if Google is enabled, false otherwise.
-     */
-    public function is_nextend_google_enabled() {
-        if ( ! $this->is_nextend_active() ) {
-            return false;
-        }
-
-        // Check if the Google provider is enabled in Nextend
-        // Nextend stores provider settings in options
-        $providers = get_option( 'nsl-google-settings', array() );
-        
-        return ! empty( $providers ) && isset( $providers['settings']['enabled'] ) && $providers['settings']['enabled'] === '1';
-    }
 
     /**
      * Generate a unique username from email.

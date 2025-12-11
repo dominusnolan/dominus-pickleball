@@ -14,7 +14,8 @@
         }
 
         const state = {
-            currentTab: 'login' // 'login' or 'register'
+            currentTab: 'login', // 'login' or 'register'
+            nextendAuthTimeout: 30000 // Timeout (ms) for Nextend auth completion detection
         };
 
         /**
@@ -360,9 +361,12 @@
                         $('#dp-nextend-button-login').html(response.data.html);
                         $('#dp-nextend-button-register').html(response.data.html);
                         
-                        // Trigger Nextend's initialization if it has any
-                        if (typeof NSL !== 'undefined' && typeof NSL.init === 'function') {
-                            NSL.init();
+                        // Trigger Nextend's initialization if available
+                        // NSL is Nextend's global JavaScript object that may handle button initialization
+                        // This is optional - Nextend buttons work without it, but calling init() ensures
+                        // any dynamic enhancements are applied
+                        if (typeof window.NSL !== 'undefined' && typeof window.NSL.init === 'function') {
+                            window.NSL.init();
                         }
                     } else {
                         // Show fallback message if button can't be rendered
@@ -407,10 +411,11 @@
             $(document).on('click', '[data-plugin="nsl"], .nsl-button, .nsl-container a', function() {
                 isAuthInProgress = true;
                 
-                // Reset flag after timeout in case auth is cancelled
+                // Reset flag after timeout in case auth is cancelled or fails
+                // Use configurable timeout from state
                 setTimeout(function() {
                     isAuthInProgress = false;
-                }, 30000); // 30 second timeout
+                }, state.nextendAuthTimeout);
             });
         }
 

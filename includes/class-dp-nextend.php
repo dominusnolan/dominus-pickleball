@@ -20,11 +20,14 @@ class DP_Nextend {
 
     /**
      * Check if Nextend Social Login Pro plugin is active.
+     * Nextend Social Login Pro uses the NextendSocialLogin class as its main identifier.
      *
      * @return bool True if Nextend is active, false otherwise.
      */
     public function is_active() {
-        return class_exists( 'NextendSocialLogin' ) || function_exists( 'NextendSocialLogin' );
+        // Check for the main Nextend class
+        // This is the most reliable way to detect Nextend Social Login Pro
+        return class_exists( 'NextendSocialLogin' );
     }
 
     /**
