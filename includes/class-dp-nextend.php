@@ -25,8 +25,9 @@ class DP_Nextend {
      * @return bool True if Nextend is active, false otherwise.
      */
     public function is_active() {
-        // Check for the main Nextend class or shortcode availability
-        // This is the most reliable way to detect Nextend Social Login Pro
+        // Check for the main Nextend class (primary check) or shortcode availability (fallback)
+        // The class check is the most reliable indicator of a fully functioning Nextend installation
+        // The shortcode check provides additional resilience for edge cases or unusual configurations
         return class_exists( 'NextendSocialLogin' ) || shortcode_exists( 'nextend_social_login' );
     }
 
@@ -59,7 +60,8 @@ class DP_Nextend {
         $output = do_shortcode( $shortcode );
 
         // If shortcode returns empty output, provider is likely disabled
-        if ( empty( trim( $output ) ) ) {
+        // Strip tags and trim to check for actual content
+        if ( empty( strip_tags( trim( $output ) ) ) ) {
             $message = apply_filters( 
                 'dp_nextend_google_disabled_message', 
                 __( 'Google sign-in is currently disabled.', 'dominus-pickleball' )
