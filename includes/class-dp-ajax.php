@@ -40,9 +40,10 @@ class DP_Ajax {
             $interval   = new DateInterval('PT60M');
 
             // Generate headers
+            // Allow the last 60-minute slot to start at the configured end time.
             $time_headers = [];
             $current = clone $start_time;
-            while ( $current < $end_time ) {
+            while ( $current <= $end_time ) {
                 $time_headers[] = $current->format('ga');
                 $current->add( $interval );
             }
