@@ -235,12 +235,33 @@
     font-weight: 500;
 }
 
-/* Google Sign-In Button Container */
-.dp-google-signin-button {
+/* Nextend Social Login Button Container */
+.dp-nextend-button-container {
     display: flex;
     justify-content: center;
+    align-items: center;
     margin: 0 auto;
     min-height: 44px;
+}
+
+.dp-nextend-button-container .nsl-container {
+    margin: 0 auto;
+}
+
+.dp-nextend-button-container .nsl-button {
+    min-width: 200px;
+}
+
+/* Ensure Nextend buttons have proper styling in modal */
+.dp-auth-modal-container .nsl-container {
+    margin: 0;
+    padding: 0;
+}
+
+.dp-auth-modal-container .nsl-button {
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
 }
 
 /* Messages */

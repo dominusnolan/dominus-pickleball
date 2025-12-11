@@ -14,12 +14,16 @@ class DP_Auth {
         // AJAX endpoints for authentication
         add_action( 'wp_ajax_nopriv_dp_login', array( $this, 'ajax_login' ) );
         add_action( 'wp_ajax_nopriv_dp_register', array( $this, 'ajax_register' ) );
-        add_action( 'wp_ajax_nopriv_dp_google_signin', array( $this, 'ajax_google_signin' ) );
+        add_action( 'wp_ajax_nopriv_dp_get_nextend_button', array( $this, 'ajax_get_nextend_button' ) );
         
         // Also allow logged-in users (though they shouldn't need these)
         add_action( 'wp_ajax_dp_login', array( $this, 'ajax_login' ) );
         add_action( 'wp_ajax_dp_register', array( $this, 'ajax_register' ) );
-        add_action( 'wp_ajax_dp_google_signin', array( $this, 'ajax_google_signin' ) );
+        add_action( 'wp_ajax_dp_get_nextend_button', array( $this, 'ajax_get_nextend_button' ) );
+        
+        // Hook into Nextend Social Login to close modal after successful auth
+        add_action( 'nsl_login', array( $this, 'handle_nextend_login' ), 10, 1 );
+        add_action( 'nsl_register_new_user', array( $this, 'handle_nextend_register' ), 10, 1 );
     }
 
     /**
@@ -194,235 +198,77 @@ class DP_Auth {
     }
 
     /**
-     * AJAX handler for Google OAuth sign-in.
+     * AJAX handler to get Nextend Social Login button HTML.
      */
-    public function ajax_google_signin() {
+    public function ajax_get_nextend_button() {
         // Verify nonce
         check_ajax_referer( 'dp_auth_nonce', 'nonce' );
 
-        // Get ID token from request
-        $id_token = isset( $_POST['id_token'] ) ? sanitize_text_field( wp_unslash( $_POST['id_token'] ) ) : '';
+        $context = isset( $_POST['context'] ) ? sanitize_text_field( wp_unslash( $_POST['context'] ) ) : 'login';
 
-        if ( empty( $id_token ) ) {
-            wp_send_json_error( array(
-                'code'    => 'missing_token',
-                'message' => __( 'No authentication token provided.', 'dominus-pickleball' ),
-            ) );
-        }
-
-        // Get Google Client ID from settings or constant
-        $client_id = $this->get_google_client_id();
-
-        if ( empty( $client_id ) ) {
-            wp_send_json_error( array(
-                'code'    => 'not_configured',
-                'message' => __( 'Google sign-in is not configured properly.', 'dominus-pickleball' ),
-            ) );
-        }
-
-        // Verify the ID token
-        $payload = $this->verify_google_id_token( $id_token, $client_id );
-
-        if ( is_wp_error( $payload ) ) {
-            wp_send_json_error( array(
-                'code'    => $payload->get_error_code(),
-                'message' => $payload->get_error_message(),
-            ) );
-        }
-
-        // Extract user info from payload
-        $google_id = $payload['sub'];
-        $email = $payload['email'];
-        $email_verified = isset( $payload['email_verified'] ) && $payload['email_verified'];
-        $given_name = isset( $payload['given_name'] ) ? $payload['given_name'] : '';
-        $family_name = isset( $payload['family_name'] ) ? $payload['family_name'] : '';
-        $full_name = isset( $payload['name'] ) ? $payload['name'] : trim( $given_name . ' ' . $family_name );
-
-        // Check if email is verified
-        if ( ! $email_verified ) {
-            wp_send_json_error( array(
-                'code'    => 'email_not_verified',
-                'message' => __( 'Your Google email is not verified.', 'dominus-pickleball' ),
-            ) );
-        }
-
-        // Look for existing user by Google ID
-        $user_id = $this->get_user_by_google_id( $google_id );
-
-        if ( $user_id ) {
-            // User exists, log them in
-            wp_set_auth_cookie( $user_id, true, is_ssl() );
-            wp_set_current_user( $user_id );
-            $user = get_user_by( 'id', $user_id );
-            
-            do_action( 'wp_login', $user->user_login, $user );
+        // Use DP_Nextend class to render button
+        if ( class_exists( 'DP_Nextend' ) ) {
+            $nextend = new DP_Nextend();
+            $button_html = $nextend->render_google_button( $context );
 
             wp_send_json_success( array(
-                'message'      => __( 'Login successful!', 'dominus-pickleball' ),
-                'user_id'      => $user_id,
-                'display_name' => $user->display_name,
-                'redirect_url' => apply_filters( 'dp_google_signin_redirect_url', '' ),
+                'html' => $button_html,
             ) );
-        }
-
-        // Check if email already exists (linked to different account)
-        $existing_user = get_user_by( 'email', $email );
-
-        if ( $existing_user ) {
-            // Email exists but not linked to this Google account
-            // Link the Google account to existing user
-            $this->link_google_account( $existing_user->ID, $google_id );
-
-            wp_set_auth_cookie( $existing_user->ID, true, is_ssl() );
-            wp_set_current_user( $existing_user->ID );
-            
-            do_action( 'wp_login', $existing_user->user_login, $existing_user );
-
-            wp_send_json_success( array(
-                'message'      => __( 'Google account linked and logged in successfully!', 'dominus-pickleball' ),
-                'user_id'      => $existing_user->ID,
-                'display_name' => $existing_user->display_name,
-                'redirect_url' => apply_filters( 'dp_google_signin_redirect_url', '' ),
-            ) );
-        }
-
-        // Create new user with Google account
-        try {
-            $username = $this->generate_username_from_email( $email );
-            $password = wp_generate_password( 20, true, true );
-
-            // Create WooCommerce customer
-            if ( function_exists( 'wc_create_new_customer' ) ) {
-                $user_id = wc_create_new_customer( $email, $username, $password );
-                
-                if ( is_wp_error( $user_id ) ) {
-                    wp_send_json_error( array(
-                        'code'    => $user_id->get_error_code(),
-                        'message' => $user_id->get_error_message(),
-                    ) );
-                }
-            } else {
-                // Fallback
-                $user_id = wp_create_user( $username, $password, $email );
-                
-                if ( is_wp_error( $user_id ) ) {
-                    wp_send_json_error( array(
-                        'code'    => $user_id->get_error_code(),
-                        'message' => $user_id->get_error_message(),
-                    ) );
-                }
-                
-                $user = new WP_User( $user_id );
-                $user->set_role( 'customer' );
-            }
-
-            // Set user's display name
-            if ( ! empty( $full_name ) ) {
-                wp_update_user( array(
-                    'ID'           => $user_id,
-                    'display_name' => $full_name,
-                    'first_name'   => $given_name,
-                    'last_name'    => $family_name,
-                ) );
-            }
-
-            // Link Google account
-            $this->link_google_account( $user_id, $google_id );
-
-            // Auto-login
-            wp_set_auth_cookie( $user_id, true, is_ssl() );
-            wp_set_current_user( $user_id );
-            $user = get_user_by( 'id', $user_id );
-            
-            do_action( 'wp_login', $user->user_login, $user );
-
-            wp_send_json_success( array(
-                'message'      => __( 'Account created and logged in successfully!', 'dominus-pickleball' ),
-                'user_id'      => $user_id,
-                'display_name' => $user->display_name,
-                'redirect_url' => apply_filters( 'dp_google_signin_redirect_url', '' ),
-            ) );
-
-        } catch ( Exception $e ) {
+        } else {
             wp_send_json_error( array(
-                'code'    => 'google_signin_failed',
-                'message' => $e->getMessage(),
+                'message' => __( 'Nextend integration not available.', 'dominus-pickleball' ),
             ) );
         }
     }
 
     /**
-     * Verify Google ID token.
+     * Handle successful Nextend Social Login.
+     * This is called after Nextend completes authentication.
      *
-     * @param string $id_token The ID token from Google.
-     * @param string $client_id The Google client ID.
-     * @return array|WP_Error Decoded payload or error.
+     * @param int $user_id The logged-in user ID.
      */
-    private function verify_google_id_token( $id_token, $client_id ) {
-        // Make request to Google's token verification endpoint
-        $response = wp_remote_get( 'https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=' . urlencode( $id_token ) );
-
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error( 'verification_failed', __( 'Failed to verify Google token.', 'dominus-pickleball' ) );
-        }
-
-        $body = wp_remote_retrieve_body( $response );
-        $data = json_decode( $body, true );
-
-        // Check for errors
-        if ( isset( $data['error'] ) ) {
-            return new WP_Error( 'invalid_token', __( 'Invalid Google token.', 'dominus-pickleball' ) );
-        }
-
-        // Verify the token is for our client
-        if ( ! isset( $data['aud'] ) || $data['aud'] !== $client_id ) {
-            return new WP_Error( 'wrong_client', __( 'Token is not for this application.', 'dominus-pickleball' ) );
-        }
-
-        // Verify issuer
-        if ( ! isset( $data['iss'] ) || ! in_array( $data['iss'], array( 'accounts.google.com', 'https://accounts.google.com' ), true ) ) {
-            return new WP_Error( 'wrong_issuer', __( 'Invalid token issuer.', 'dominus-pickleball' ) );
-        }
-
-        // Check expiration
-        if ( ! isset( $data['exp'] ) || time() >= $data['exp'] ) {
-            return new WP_Error( 'token_expired', __( 'Token has expired.', 'dominus-pickleball' ) );
-        }
-
-        return $data;
+    public function handle_nextend_login( $user_id ) {
+        // Set a transient to signal that login was successful via Nextend
+        // The frontend JS can check for this or the page will reload automatically
+        set_transient( 'dp_nextend_login_' . $user_id, true, 60 );
     }
 
     /**
-     * Get user ID by Google ID.
+     * Handle successful Nextend Social Login registration.
+     * This is called after Nextend creates a new user.
      *
-     * @param string $google_id The Google user ID.
-     * @return int|false User ID or false if not found.
+     * @param int $user_id The newly registered user ID.
      */
-    private function get_user_by_google_id( $google_id ) {
-        global $wpdb;
+    public function handle_nextend_register( $user_id ) {
+        // Set a transient to signal that registration was successful via Nextend
+        set_transient( 'dp_nextend_register_' . $user_id, true, 60 );
+    }
+
+    /**
+     * Check if Nextend Social Login Pro plugin is active.
+     *
+     * @return bool True if Nextend is active, false otherwise.
+     */
+    public function is_nextend_active() {
+        // Check if Nextend Social Login Pro is installed and active
+        return class_exists( 'NextendSocialLogin' ) || function_exists( 'NextendSocialLogin' );
+    }
+
+    /**
+     * Check if Google provider is enabled in Nextend.
+     *
+     * @return bool True if Google is enabled, false otherwise.
+     */
+    public function is_nextend_google_enabled() {
+        if ( ! $this->is_nextend_active() ) {
+            return false;
+        }
+
+        // Check if the Google provider is enabled in Nextend
+        // Nextend stores provider settings in options
+        $providers = get_option( 'nsl-google-settings', array() );
         
-        // Note: Consider adding a database index for performance:
-        // CREATE INDEX idx_google_id ON {$wpdb->usermeta} (meta_key, meta_value(191));
-        // This can be added via plugin activation hook if needed for large installations
-        
-        $user_id = $wpdb->get_var( $wpdb->prepare(
-            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = 'dp_google_id' AND meta_value = %s",
-            $google_id
-        ) );
-
-        return $user_id ? intval( $user_id ) : false;
-    }
-
-    /**
-     * Link Google account to user.
-     *
-     * @param int    $user_id   The WordPress user ID.
-     * @param string $google_id The Google user ID.
-     */
-    private function link_google_account( $user_id, $google_id ) {
-        // Store Google ID as-is - it's already validated by Google's token verification
-        // Using sanitize_text_field might corrupt the ID
-        update_user_meta( $user_id, 'dp_google_id', $google_id );
+        return ! empty( $providers ) && isset( $providers['settings']['enabled'] ) && $providers['settings']['enabled'] === '1';
     }
 
     /**
@@ -458,25 +304,7 @@ class DP_Auth {
         return strlen( $password ) >= 6;
     }
 
-    /**
-     * Get Google Client ID from settings or constant.
-     *
-     * @return string Client ID or empty string.
-     */
-    private function get_google_client_id() {
-        // Check for constant first (preferred for production)
-        if ( defined( 'DP_GOOGLE_CLIENT_ID' ) ) {
-            return DP_GOOGLE_CLIENT_ID;
-        }
 
-        // Check for option in database
-        $settings = get_option( 'dp_settings', array() );
-        if ( isset( $settings['google_client_id'] ) && ! empty( $settings['google_client_id'] ) ) {
-            return $settings['google_client_id'];
-        }
-
-        return '';
-    }
 
     /**
      * Get friendly error message for login errors.
