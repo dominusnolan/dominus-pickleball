@@ -15,8 +15,7 @@
 
         const state = {
             currentTab: 'login', // 'login' or 'register'
-            googleLoaded: false,
-            googleInitialized: false
+            nextendAuthTimeout: 30000 // Timeout (ms) for Nextend auth completion detection
         };
 
         /**
@@ -35,8 +34,11 @@
             // Bind event handlers
             bindEvents();
 
-            // Initialize Google Sign-In
-            initGoogleSignIn();
+            // Initialize Nextend Social Login if available
+            initNextendButtons();
+            
+            // Listen for Nextend authentication completion
+            setupNextendListeners();
         }
 
         /**
@@ -90,11 +92,13 @@
                             </div>
                         </form>
 
-                        <!-- Google Sign-In Button -->
+                        ${dp_auth.nextend_active ? `
+                        <!-- Nextend Social Login Button -->
                         <div class="dp-auth-divider">
                             <span>${dp_auth.strings.or_continue_with}</span>
                         </div>
-                        <div id="dp-google-signin-button-login" class="dp-google-signin-button"></div>
+                        <div id="dp-nextend-button-login" class="dp-nextend-button-container"></div>
+                        ` : ''}
                     </div>
 
                     <!-- Register Panel -->
@@ -129,11 +133,13 @@
                             </button>
                         </form>
 
-                        <!-- Google Sign-In Button -->
+                        ${dp_auth.nextend_active ? `
+                        <!-- Nextend Social Login Button -->
                         <div class="dp-auth-divider">
                             <span>${dp_auth.strings.or_continue_with}</span>
                         </div>
-                        <div id="dp-google-signin-button-register" class="dp-google-signin-button"></div>
+                        <div id="dp-nextend-button-register" class="dp-nextend-button-container"></div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -331,143 +337,85 @@
         }
 
         /**
-         * Initialize Google Sign-In
+         * Initialize Nextend Social Login buttons
+         * Fetch button HTML from server and inject into containers
          */
-        function initGoogleSignIn() {
-            // Check if Google Client ID is configured
-            if (!dp_auth.google_client_id) {
-                console.log('Google Sign-In not configured');
+        function initNextendButtons() {
+            if (!dp_auth.nextend_active) {
+                console.log('Nextend Social Login not active');
                 return;
             }
 
-            // Load Google Identity Services library
-            // Use window.google to explicitly check global scope
-            if (typeof window.google === 'undefined' || !window.google.accounts) {
-                loadGoogleScript();
-            } else {
-                renderGoogleButton();
-            }
-        }
-
-        /**
-         * Load Google Identity Services script
-         */
-        function loadGoogleScript() {
-            const script = document.createElement('script');
-            script.src = 'https://accounts.google.com/gsi/client';
-            script.async = true;
-            script.defer = true;
-            script.onload = function() {
-                state.googleLoaded = true;
-                // Wait a bit for google object to be fully available
-                setTimeout(renderGoogleButton, 100);
-            };
-            script.onerror = function() {
-                console.error('Failed to load Google Sign-In library');
-            };
-            document.head.appendChild(script);
-        }
-
-        /**
-         * Render Google Sign-In button
-         */
-        function renderGoogleButton() {
-            if (!state.googleLoaded || state.googleInitialized) {
-                return;
-            }
-
-            // Initialize Google Sign-In
-            // Use window.google to explicitly check global scope
-            if (typeof window.google !== 'undefined' && window.google.accounts && window.google.accounts.id) {
-                window.google.accounts.id.initialize({
-                    client_id: dp_auth.google_client_id,
-                    callback: handleGoogleCallback,
-                    auto_select: false,
-                    cancel_on_tap_outside: true
-                });
-
-                // Render button in login panel
-                const loginButtonContainer = document.getElementById('dp-google-signin-button-login');
-                if (loginButtonContainer) {
-                    window.google.accounts.id.renderButton(
-                        loginButtonContainer,
-                        {
-                            theme: 'outline',
-                            size: 'large',
-                            width: 300,
-                            text: 'continue_with',
-                            logo_alignment: 'left'
-                        }
-                    );
-                }
-
-                // Render button in register panel
-                const registerButtonContainer = document.getElementById('dp-google-signin-button-register');
-                if (registerButtonContainer) {
-                    window.google.accounts.id.renderButton(
-                        registerButtonContainer,
-                        {
-                            theme: 'outline',
-                            size: 'large',
-                            width: 300,
-                            text: 'continue_with',
-                            logo_alignment: 'left'
-                        }
-                    );
-                }
-
-                state.googleInitialized = true;
-            }
-        }
-
-        /**
-         * Handle Google Sign-In callback
-         */
-        function handleGoogleCallback(response) {
-            const idToken = response.credential;
-            
-            if (!idToken) {
-                console.error('No ID token received from Google');
-                return;
-            }
-
-            // Get the current message container
-            const messageContainer = $('.dp-auth-panel-active .dp-form-message');
-            clearMessages();
-
-            // Show loading state
-            showInfo(messageContainer, dp_auth.strings.google_processing);
-
-            // Send token to backend
+            // Fetch Nextend button HTML via AJAX
             $.ajax({
                 url: dp_auth.ajax_url,
                 type: 'POST',
                 data: {
-                    action: 'dp_google_signin',
+                    action: 'dp_get_nextend_button',
                     nonce: dp_auth.nonce,
-                    id_token: idToken
+                    context: 'login'
                 },
                 success: function(response) {
-                    if (response.success) {
-                        showSuccess(messageContainer, response.data.message);
+                    if (response.success && response.data.html) {
+                        // Inject button HTML into both login and register containers
+                        $('#dp-nextend-button-login').html(response.data.html);
+                        $('#dp-nextend-button-register').html(response.data.html);
                         
-                        // Close modal and refresh or redirect
-                        setTimeout(function() {
-                            closeModal();
-                            if (response.data.redirect_url) {
-                                window.location.href = response.data.redirect_url;
-                            } else {
-                                // Reload page to update UI
-                                window.location.reload();
-                            }
-                        }, 500);
+                        // Trigger Nextend's initialization if available
+                        // NSL is Nextend's global JavaScript object that may handle button initialization
+                        // This is optional - Nextend buttons work without it, but calling init() ensures
+                        // any dynamic enhancements are applied
+                        if (typeof window.NSL !== 'undefined' && typeof window.NSL.init === 'function') {
+                            window.NSL.init();
+                        }
                     } else {
-                        showError(messageContainer, response.data.message);
+                        // Show fallback message if button can't be rendered
+                        const fallbackMsg = '<p class="dp-nextend-unavailable">' + 
+                                          dp_auth.strings.nextend_unavailable + 
+                                          '</p>';
+                        $('#dp-nextend-button-login').html(fallbackMsg);
+                        $('#dp-nextend-button-register').html(fallbackMsg);
                     }
                 },
-                error: function(xhr, status, error) {
-                    showError(messageContainer, dp_auth.strings.network_error);
+                error: function() {
+                    console.error('Failed to load Nextend button');
                 }
+            });
+        }
+
+        /**
+         * Setup listeners for Nextend authentication completion
+         * Nextend opens a popup window, we need to detect when auth is complete
+         */
+        function setupNextendListeners() {
+            if (!dp_auth.nextend_active) {
+                return;
+            }
+
+            // Listen for window focus events (when popup closes)
+            // This is the primary way to detect Nextend auth completion
+            let isAuthInProgress = false;
+            
+            $(window).on('focus', function() {
+                if (isAuthInProgress) {
+                    // Small delay to allow Nextend to complete its process
+                    setTimeout(function() {
+                        // Check if user is now logged in by attempting to reload
+                        // Nextend will have already logged the user in server-side
+                        window.location.reload();
+                    }, 500);
+                }
+            });
+
+            // Track when Nextend buttons are clicked
+            $(document).on('click', '[data-plugin="nsl"], .nsl-button, .nsl-container a', function() {
+                isAuthInProgress = true;
+                
+                // Reset flag after timeout in case auth is cancelled or fails
+                // Use configurable timeout from state
+                setTimeout(function() {
+                    isAuthInProgress = false;
+                }, state.nextendAuthTimeout);
             });
         }
 

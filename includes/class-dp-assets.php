@@ -80,7 +80,7 @@ class DP_Assets {
             array(
                 'ajax_url'             => admin_url( 'admin-ajax.php' ),
                 'nonce'                => wp_create_nonce( 'dp_auth_nonce' ),
-                'google_client_id'     => $this->get_google_client_id(),
+                'nextend_active'       => $this->is_nextend_active(),
                 'lost_password_url'    => wp_lostpassword_url(),
                 'wc_generate_password' => get_option( 'woocommerce_registration_generate_password' ) === 'yes',
                 'show_terms'           => apply_filters( 'dp_require_terms_acceptance', false ),
@@ -109,7 +109,7 @@ class DP_Assets {
                     'password_required'   => __( 'Please enter your password.', 'dominus-pickleball' ),
                     'terms_required'      => __( 'You must accept the terms and conditions.', 'dominus-pickleball' ),
                     'network_error'       => __( 'Network error. Please try again.', 'dominus-pickleball' ),
-                    'google_processing'   => __( 'Signing in with Google...', 'dominus-pickleball' ),
+                    'nextend_unavailable' => __( 'Social login is currently unavailable.', 'dominus-pickleball' ),
                 ),
             )
         );
@@ -123,22 +123,12 @@ class DP_Assets {
     }
 
     /**
-     * Get Google Client ID from settings or constant.
+     * Check if Nextend Social Login Pro plugin is active.
+     * Uses the main NextendSocialLogin class as the identifier.
      *
-     * @return string Client ID or empty string.
+     * @return bool True if Nextend is active, false otherwise.
      */
-    private function get_google_client_id() {
-        // Check for constant first (preferred for production)
-        if ( defined( 'DP_GOOGLE_CLIENT_ID' ) ) {
-            return DP_GOOGLE_CLIENT_ID;
-        }
-
-        // Check for option in database
-        $settings = get_option( 'dp_settings', array() );
-        if ( isset( $settings['google_client_id'] ) && ! empty( $settings['google_client_id'] ) ) {
-            return $settings['google_client_id'];
-        }
-
-        return '';
+    private function is_nextend_active() {
+        return class_exists( 'NextendSocialLogin' );
     }
 }

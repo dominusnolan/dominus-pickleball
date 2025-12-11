@@ -107,13 +107,14 @@ class DP_Admin {
             [ 'id' => 'dp_slot_price', 'default' => '20.00' ]
         );
 
+        // Nextend Social Login Configuration Notice
         add_settings_field(
-            'google_client_id',
-            __( 'Google Client ID', 'dominus-pickleball' ),
-            array( $this, 'render_google_client_id_field' ),
+            'nextend_social_login_notice',
+            __( 'Social Login Configuration', 'dominus-pickleball' ),
+            array( $this, 'render_nextend_notice_field' ),
             'dominus-pickleball',
             'dp_general_settings_section',
-            [ 'id' => 'google_client_id', 'default' => '' ]
+            []
         );
 
         // Blocked Time Ranges Section
@@ -229,24 +230,30 @@ class DP_Admin {
     }
 
     /**
-     * Render Google Client ID field.
+     * Render the Nextend Social Login notice field.
      */
-    public function render_google_client_id_field( $args ) {
-        $options = get_option( 'dp_settings' );
-        $value = isset( $options[ $args['id'] ] ) ? $options[ $args['id'] ] : $args['default'];
-        
-        // Check if constant is defined
-        $constant_defined = defined( 'DP_GOOGLE_CLIENT_ID' );
-        
-        echo '<input type="text" id="' . esc_attr( $args['id'] ) . '" name="dp_settings[' . esc_attr( $args['id'] ) . ']" value="' . esc_attr( $value ) . '" placeholder="' . esc_attr__( 'e.g., 123456789-abc.apps.googleusercontent.com', 'dominus-pickleball' ) . '" style="width: 400px;" ' . ( $constant_defined ? 'disabled' : '' ) . ' />';
-        
-        if ( $constant_defined ) {
-            echo '<p class="description">' . esc_html__( 'Google Client ID is defined in wp-config.php (DP_GOOGLE_CLIENT_ID constant)', 'dominus-pickleball' ) . '</p>';
+    public function render_nextend_notice_field( $args ) {
+        // Check if DP_Nextend class exists
+        if ( class_exists( 'DP_Nextend' ) ) {
+            $nextend = new DP_Nextend();
+            $notice = $nextend->get_config_notice();
+            
+            if ( ! empty( $notice ) ) {
+                echo wp_kses_post( $notice );
+            } else {
+                // Nextend is active and Google is enabled
+                $nextend_settings_url = admin_url( 'admin.php?page=nextend-social-login' );
+                echo '<p class="description">' .
+                     sprintf(
+                         __( 'Social login with Google is enabled via Nextend Social Login Pro. %s', 'dominus-pickleball' ),
+                         '<a href="' . esc_url( $nextend_settings_url ) . '">' . __( 'Manage Nextend settings', 'dominus-pickleball' ) . '</a>'
+                     ) .
+                     '</p>';
+            }
         } else {
-            echo '<p class="description">' . sprintf(
-                __( 'Enter your Google OAuth Client ID. See %s for setup instructions.', 'dominus-pickleball' ),
-                '<a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>'
-            ) . '</p>';
+            echo '<p class="description">' .
+                 __( 'Social login integration not available. Install Nextend Social Login Pro plugin to enable social login features.', 'dominus-pickleball' ) .
+                 '</p>';
         }
     }
 
@@ -460,7 +467,6 @@ class DP_Admin {
         $sanitized_input['dp_start_time'] = isset( $input['dp_start_time'] ) ? sanitize_text_field( $input['dp_start_time'] ) : '07:00';
         $sanitized_input['dp_end_time'] = isset( $input['dp_end_time'] ) ? sanitize_text_field( $input['dp_end_time'] ) : '23:00';
         $sanitized_input['dp_slot_price'] = isset( $input['dp_slot_price'] ) ? sanitize_text_field( $input['dp_slot_price'] ) : '20.00';
-        $sanitized_input['google_client_id'] = isset( $input['google_client_id'] ) ? sanitize_text_field( $input['google_client_id'] ) : '';
         
         // Sanitize blocked time ranges for each day of the week
         foreach ( $this->get_days_of_week() as $day ) {

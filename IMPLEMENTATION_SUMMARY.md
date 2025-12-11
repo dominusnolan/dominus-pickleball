@@ -1,8 +1,8 @@
-# Implementation Summary: Login and Registration Flow
+# Implementation Summary: Login and Registration Flow with Nextend Social Login Pro
 
 ## Overview
 
-This document summarizes the implementation of a comprehensive authentication system for the Dominus Pickleball booking plugin, including native WordPress/WooCommerce login, registration, and Google OAuth integration.
+This document summarizes the implementation of a comprehensive authentication system for the Dominus Pickleball booking plugin, including native WordPress/WooCommerce login, registration, and Nextend Social Login Pro integration (Google provider).
 
 ## What Was Implemented
 
@@ -24,21 +24,24 @@ A new PHP class that handles all authentication operations via AJAX endpoints:
   - Auto-login after successful registration
   - Returns user info or validation errors
 
-- **`dp_google_signin`**: Google OAuth integration
-  - Verifies Google ID tokens via Google's API
-  - Handles three scenarios:
-    1. New user: Creates WordPress account with Google email
-    2. Existing user: Logs in user linked to Google account
-    3. Email match: Links Google account to existing WordPress user
-  - Stores Google ID in user meta (`dp_google_id`)
-  - Auto-login after successful authentication
+- **`dp_get_nextend_button`**: Nextend Social Login Pro button rendering
+  - Fetches Nextend Google button HTML via AJAX
+  - Returns rendered button shortcode from Nextend plugin
+  - Supports both login and register contexts
+  - Graceful fallback if Nextend not available
+
+#### Nextend Integration Hooks:
+- **`nsl_login`**: Triggered after successful Nextend authentication
+- **`nsl_register_new_user`**: Triggered after new user creation via Nextend
+- Uses transients to signal successful auth completion
 
 #### Security Features:
 - CSRF protection via WordPress nonces
 - Input sanitization and validation
-- Google token verification with Google's API
+- OAuth token verification handled by Nextend Social Login Pro
 - Prepared SQL statements for database queries
 - Friendly error messages (no information leakage)
+- Nextend handles all OAuth flows securely (no custom token handling)
 
 ### 2. Frontend Modal UI
 
@@ -70,11 +73,13 @@ A comprehensive JavaScript file that handles:
   - Terms acceptance checkbox (conditional)
   - AJAX submission (no page reload)
 
-**Google OAuth Integration:**
-- Loads Google Identity Services library
-- Renders Google Sign-In buttons in both tabs
-- Handles callback and token exchange
-- Shows appropriate loading/success/error states
+**Nextend Social Login Integration:**
+- Fetches Nextend Google button HTML via AJAX
+- Injects Nextend buttons in both login and register tabs
+- Detects Nextend popup auth completion via window focus events
+- Automatically reloads page after successful authentication
+- Graceful fallback when Nextend is not installed
+- All OAuth flows handled by Nextend plugin (secure and tested)
 
 **Success Handling:**
 - Closes modal automatically
@@ -120,56 +125,77 @@ Updated to enqueue new authentication assets:
 
 **Localization:**
 - Passes AJAX URL and nonces to JavaScript
-- Passes Google Client ID configuration
+- Passes Nextend plugin activation status
 - Passes all UI strings for internationalization
 - Passes WooCommerce settings (password generation, terms)
 
 **Configuration:**
-- Checks for `DP_GOOGLE_CLIENT_ID` constant (wp-config.php)
-- Falls back to database option from admin settings
-- Provides helper method `get_google_client_id()`
+- Checks if Nextend Social Login Pro is active
+- Provides helper method `is_nextend_active()`
+- No OAuth credentials stored in this plugin (handled by Nextend)
 
-### 4. Admin Settings (`includes/class-dp-admin.php`)
+### 4. Nextend Integration (`includes/class-dp-nextend.php`)
 
-Added Google Client ID configuration:
+New PHP class dedicated to Nextend Social Login Pro integration:
+
+**Core Functions:**
+- `is_active()`: Checks if Nextend plugin is installed and active
+- `is_google_enabled()`: Verifies Google provider is enabled in Nextend
+- `render_google_button()`: Renders Nextend Google button via shortcode
+- `customize_button_text()`: Filter to customize button text
+- `get_config_notice()`: Returns admin notice about Nextend configuration status
+
+**Features:**
+- Graceful degradation when Nextend not installed
+- Clear admin notices with setup links
+- Uses Nextend shortcodes for button rendering
+- All OAuth flows handled by Nextend (no custom implementation)
+
+### 5. Admin Settings (`includes/class-dp-admin.php`)
+
+Updated to integrate with Nextend Social Login Pro:
+
+**Removed Settings:**
+- Google Client ID input field (no longer needed)
+- Google Client ID sanitization (OAuth handled by Nextend)
 
 **New Setting Field:**
-- Google Client ID input field
-- Help text with Google Cloud Console link
-- Disabled state when constant is defined
-- Proper sanitization in save handler
+- Social Login Configuration notice
+- Shows Nextend plugin status (installed/not installed)
+- Shows Google provider status (enabled/disabled)
+- Links to Nextend settings page for configuration
+- Helps admins set up Nextend Social Login Pro
 
-**Configuration Priority:**
-1. `DP_GOOGLE_CLIENT_ID` constant (wp-config.php) - highest priority
-2. Database option (admin settings) - fallback
+### 6. Template Updates (`templates/booking-form.php`)
 
-### 5. Template Updates (`templates/booking-form.php`)
-
-Simplified modal opening logic:
+Modal structure preserved for JavaScript manipulation:
 
 **Changes:**
-- Removed duplicate modal close handling
-- Kept simple "Login to Book" button handler
+- Existing modal HTML container kept intact
 - Modal content dynamically replaced by JavaScript
+- "Login to Book" button handler unchanged
 - Existing modal structure preserved
 
-### 6. Main Plugin File (`dominus-pickleball.php`)
+### 7. Main Plugin File (`dominus-pickleball.php`)
 
-Integrated authentication class:
+Integrated new classes:
 
 **Changes:**
 - Added `require_once` for `class-dp-auth.php`
+- Added `require_once` for `class-dp-nextend.php`
 - Added `new DP_Auth()` initialization
+- Added `new DP_Nextend()` initialization
 - Properly loads in dependency chain
 
-### 7. Documentation (`README.md`)
+### 8. Documentation (`README.md`)
 
-Comprehensive documentation including:
+Comprehensive documentation updated for Nextend integration:
 
 **Setup Instructions:**
-- Google OAuth setup (step-by-step with screenshots descriptions)
-- Configuration options (two methods)
-- Domain verification requirements
+- Nextend Social Login Pro installation guide
+- Google provider configuration in Nextend
+- Redirect URL configuration
+- Testing instructions
 
 **Usage Guide:**
 - For site visitors
@@ -180,7 +206,7 @@ Comprehensive documentation including:
 - 30+ manual test cases organized by category:
   - Login flow (5 test cases)
   - Registration flow (3 test cases)
-  - Google OAuth flow (4 test cases)
+  - Nextend Social Login flow (4 test cases) - updated for Nextend
   - Error conditions (4 test cases)
   - Modal behavior (5 test cases)
   - Integration tests (2 test cases)
@@ -196,35 +222,37 @@ Comprehensive documentation including:
 - Features list
 - Best practices
 - Vulnerability prevention measures
+- OAuth security delegated to Nextend plugin
 
 **Filters and Hooks:**
 - Available customization points
 - Example code snippets
+- Nextend integration hooks
 
 ## Files Created/Modified
 
 ### Created Files:
-1. `includes/class-dp-auth.php` (20 KB) - Authentication handler
-2. `assets/js/dp-modal-auth.js` (20 KB) - Modal UI and form handling
-3. `assets/css/dp-modal-auth.css` (6.7 KB) - Modal styling
-4. `README.md` (12 KB) - Comprehensive documentation
+1. `includes/class-dp-auth.php` - WooCommerce authentication handler
+2. `includes/class-dp-nextend.php` - Nextend Social Login Pro integration
+3. `assets/js/dp-modal-auth.js` - Modal UI and form handling with Nextend support
+4. `assets/css/dp-modal-auth.css` - Modal styling with Nextend button support
 5. `IMPLEMENTATION_SUMMARY.md` (this file) - Implementation overview
 
 ### Modified Files:
-1. `dominus-pickleball.php` - Load auth class
-2. `includes/class-dp-assets.php` - Enqueue auth assets
-3. `includes/class-dp-admin.php` - Add Google Client ID setting
-4. `templates/booking-form.php` - Simplify modal logic
+1. `dominus-pickleball.php` - Load auth and Nextend classes
+2. `includes/class-dp-assets.php` - Enqueue auth assets, Nextend detection
+3. `includes/class-dp-admin.php` - Replace Google Client ID with Nextend notice
+4. `README.md` - Updated with Nextend setup instructions
 
 ## Quality Assurance
 
 ### Code Review
 - ✅ Completed and all feedback addressed
 - ✅ 4 review comments resolved:
-  - Improved Google ID storage (no sanitization of validated token)
-  - Added database index performance note
-  - Changed to `window.google` for safer global scope checking
-  - CSS variables already properly implemented
+  - Removed duplicate Nextend detection methods from DP_Auth
+  - Simplified Nextend plugin detection (removed redundant function check)
+  - Made auth timeout configurable via state variable
+  - Added documentation for NSL.init() optional call
 
 ### Security Scan
 - ✅ CodeQL security scan passed
@@ -249,25 +277,50 @@ Comprehensive documentation including:
 ### Security
 1. **CSRF Protection**: WordPress nonces on all AJAX endpoints
 2. **Input Validation**: All user input sanitized and validated
-3. **Token Verification**: Google ID tokens verified with Google's API
-4. **SQL Safety**: All database queries use prepared statements
-5. **Password Security**: WordPress native password hashing
-6. **No Information Leakage**: Friendly error messages without details
+3. **OAuth Security**: All OAuth flows handled securely by Nextend Social Login Pro
+4. **No Custom Token Handling**: Delegated to battle-tested Nextend plugin
+5. **SQL Safety**: All database queries use prepared statements
+6. **Password Security**: WordPress native password hashing
+7. **No Information Leakage**: Friendly error messages without details
+8. **CodeQL Scan**: 0 security alerts found
 
 ### User Experience
-1. **No Page Reload**: All authentication happens via AJAX
+1. **No Page Reload**: WooCommerce authentication happens via AJAX
 2. **Smooth Transitions**: Tab switching with animations
 3. **Inline Feedback**: Errors and success messages in modal
 4. **Preserved State**: Selected slots maintained through login
 5. **Responsive Design**: Works on all screen sizes
 6. **Accessibility**: ARIA labels, keyboard navigation, screen reader support
+7. **Social Login**: One-click "Continue with Google" via Nextend
+8. **Graceful Degradation**: Works without Nextend (WooCommerce auth only)
 
 ### Developer Experience
 1. **Well-Documented**: Comprehensive README and code comments
-2. **Configurable**: Multiple configuration methods
-3. **Extensible**: Filters and hooks for customization
-4. **WooCommerce Native**: Uses WooCommerce functions when available
-5. **Backward Compatible**: Doesn't break existing functionality
+2. **Modular Design**: Separate classes for auth, Nextend, assets, admin
+3. **No OAuth Complexity**: Nextend handles all OAuth configuration
+4. **Extensible**: Filters and hooks for customization
+5. **WooCommerce Native**: Uses WooCommerce functions when available
+6. **Backward Compatible**: Doesn't break existing functionality
+
+## Integration Approach: Why Nextend Social Login Pro?
+
+### Design Decision
+Instead of implementing custom Google OAuth (Google Identity Services), this plugin integrates with **Nextend Social Login Pro** - a mature, well-tested WordPress plugin specifically designed for social authentication.
+
+### Benefits of Nextend Integration
+1. **Battle-Tested Security**: Nextend is used by thousands of sites and regularly updated for security
+2. **No Token Management**: OAuth complexity handled by dedicated plugin
+3. **Provider Flexibility**: Easy to add Facebook, Apple, Twitter, etc. in the future
+4. **Account Linking**: Nextend handles email conflicts and account merging
+5. **Regular Updates**: OAuth specifications change; Nextend stays current
+6. **Less Code to Maintain**: No custom OAuth implementation to debug
+7. **Professional UI**: Nextend provides polished, tested button designs
+
+### Integration Method
+- **Shortcode Rendering**: Uses Nextend's `[nextend_social_login provider="google"]` shortcode
+- **AJAX Loading**: Buttons fetched via AJAX and injected into modal dynamically
+- **Event Detection**: Window focus listener detects when Nextend popup closes
+- **Graceful Fallback**: Modal works without Nextend (WooCommerce auth only)
 
 ## Configuration Requirements
 
@@ -276,14 +329,17 @@ Comprehensive documentation including:
 - WooCommerce plugin active
 - PHP 7.4+
 
+### Social Login Requirements (Optional)
+- **Nextend Social Login Pro** plugin (commercial)
+- Google provider enabled in Nextend settings
+- OAuth credentials configured in Nextend (not in this plugin)
+
 ### Optional Configuration
-- Google OAuth Client ID (for "Sign in with Google")
 - Terms & Conditions page (for registration checkbox)
 - Custom redirect URLs (via filters)
 
 ### Environment Requirements
-- HTTPS (required for Google OAuth in production)
-- wp_remote_get enabled (for Google token verification)
+- HTTPS (required for OAuth in production)
 - JavaScript enabled in browser
 - Cookies enabled (for authentication)
 

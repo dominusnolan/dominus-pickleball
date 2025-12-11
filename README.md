@@ -24,51 +24,49 @@ A WordPress plugin for booking pickleball courts with WooCommerce integration an
 3. Configure settings under 'Pickleball' in the admin menu
 4. Add the booking form to any page using the shortcode: `[dp_booking_form]`
 
-## Google OAuth Setup
+## Social Login Setup (Nextend Social Login Pro)
 
-To enable "Sign in with Google" functionality:
+To enable "Continue with Google" functionality, you'll use Nextend Social Login Pro:
 
-### 1. Create a Google Cloud Project
+### 1. Install Nextend Social Login Pro
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the **Google+ API** or **Google Identity Services**
+1. Purchase and download [Nextend Social Login Pro](https://nextendweb.com/social-login/)
+2. Install the plugin via **Plugins** > **Add New** > **Upload Plugin**
+3. Activate the plugin
+4. Navigate to **Settings** > **Nextend Social Login** in WordPress admin
 
-### 2. Create OAuth 2.0 Credentials
+### 2. Configure Google Provider
 
-1. Navigate to **APIs & Services** > **Credentials**
-2. Click **Create Credentials** > **OAuth client ID**
-3. Select **Web application** as the application type
-4. Configure the OAuth consent screen if prompted
-5. Add **Authorized JavaScript origins**:
-   - `https://yourdomain.com`
-   - `http://yourdomain.com` (for testing only)
-6. Add **Authorized redirect URIs** (optional for client-side flow):
-   - `https://yourdomain.com`
-7. Click **Create** and copy the **Client ID**
+1. In Nextend settings, click on the **Google** provider tab
+2. Follow Nextend's built-in setup wizard:
+   - Click "Getting Started" to see detailed instructions
+   - Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/)
+   - Add authorized redirect URIs from Nextend settings
+3. Enable the Google provider
+4. Configure button styles and placement options
 
-### 3. Configure the Plugin
+### 3. Test the Integration
 
-You can configure the Google Client ID in two ways:
+1. Navigate to your booking page
+2. Click "Login to Book" 
+3. You should see "Continue with Google" button in both Login and Register tabs
+4. Click the button and sign in with your Google account
 
-#### Option A: WordPress Admin Settings (Recommended for ease)
+### 4. Important Notes
 
-1. Go to **Pickleball** > **Settings** in WordPress admin
-2. Find the **Google Client ID** field under General Settings
-3. Paste your Client ID
-4. Click **Save Settings**
+- **Redirect URLs**: Nextend provides specific redirect URLs that must be added to your Google OAuth app
+- **Provider Settings**: All OAuth configuration (Client ID, Secret) is managed in Nextend settings
+- **Automatic Account Creation**: Nextend automatically creates WordPress/WooCommerce accounts for first-time Google users
+- **Account Linking**: If an email already exists, Nextend links the Google account to the existing user
 
-#### Option B: wp-config.php (Recommended for security)
+### 5. Troubleshooting
 
-Add this line to your `wp-config.php` file:
-
-```php
-define( 'DP_GOOGLE_CLIENT_ID', 'YOUR-CLIENT-ID.apps.googleusercontent.com' );
-```
-
-### 4. Verify Domain Ownership
-
-Make sure your domain is added to the **Authorized domains** list in the OAuth consent screen settings.
+If Google sign-in doesn't work:
+- Verify the Google provider is **enabled** in Nextend settings
+- Check that redirect URLs match exactly (including trailing slashes)
+- Ensure your Google OAuth app is in "Published" status (not "Testing")
+- Check WordPress debug.log for errors
+- Visit **Pickleball** > **Settings** to see Nextend configuration status
 
 ## Configuration Options
 
@@ -78,7 +76,7 @@ Make sure your domain is added to the **Authorized domains** list in the OAuth c
 - **Opening Time**: When the facility opens
 - **Closing Time**: When the facility closes  
 - **Price per Slot**: Cost for a 60-minute booking
-- **Google Client ID**: For Google OAuth sign-in
+- **Social Login Configuration**: Shows Nextend Social Login Pro status and configuration link
 
 ### Blocked Time Ranges
 
@@ -337,11 +335,14 @@ add_filter( 'dp_login_redirect_url', function() {
 
 ### Google Sign-In Not Working
 
-1. **Verify Client ID**: Make sure it's correctly configured
-2. **Check Authorized Origins**: Your domain must be in the authorized list
-3. **Check Browser Console**: Look for JavaScript errors
-4. **Verify Domain**: Domain must be verified in Google Cloud Console
-5. **Check SSL**: Google OAuth requires HTTPS in production
+1. **Check Nextend Status**: Go to **Pickleball** > **Settings** to verify Nextend is active and Google provider is enabled
+2. **Verify Plugin Installation**: Ensure Nextend Social Login Pro is installed and activated
+3. **Check Redirect URLs**: In Nextend settings, verify redirect URLs are added to your Google OAuth app
+4. **Provider Status**: In Nextend > Google settings, ensure the provider is **Enabled**
+5. **OAuth App Status**: In Google Cloud Console, ensure your OAuth app is published (not in testing mode)
+6. **Check Browser Console**: Look for JavaScript errors
+7. **Check Error Logs**: Look in WordPress debug.log for PHP errors
+8. **Clear Cache**: Clear browser and plugin cache, then test again
 
 ### Login/Registration Errors
 
