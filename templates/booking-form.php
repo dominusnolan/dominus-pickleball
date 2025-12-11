@@ -1786,7 +1786,7 @@ footer{z-index:0 !important}
     <button type="button" class="reclub-banner-btn" id="reclub-open-app-btn">Open in Reclub App</button>
 </div>
 <button type="button" class="reclub-banner-minimized" id="reclub-banner-minimized" aria-label="Show banner" title="Open in Reclub App" style="display:none">
-    <img src="https://booking.dominusit.online/wp-content/uploads/2025/11/reclub.jpg" alt="Reclub Logo" />
+    <img src="https://matchpointsc.com/wp-content/uploads/2025/11/reclub.jpg" alt="Reclub Logo" />
 </button>
 
 <script>
