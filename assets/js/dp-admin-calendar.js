@@ -161,8 +161,9 @@
         const detailsPanel = $('#dp-booking-details');
         const details = data.details || [];
 
-        // Format date
-        const date = new Date(dateStr + 'T00:00:00');
+        // Format date - parse YYYY-MM-DD manually to avoid timezone issues
+        const parts = dateStr.split('-');
+        const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
         const formattedDate = date.toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -222,9 +223,7 @@
      * Get WooCommerce order edit URL.
      */
     function getOrderEditUrl(orderId) {
-        // Modern WooCommerce uses admin.php?page=wc-orders&action=edit&id=X
-        // Older versions use post.php?post=X&action=edit
-        // We'll use the modern format which works in both cases
+        // Use the post.php format which works for WooCommerce orders
         return 'post.php?post=' + orderId + '&action=edit';
     }
 
