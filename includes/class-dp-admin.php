@@ -15,6 +15,8 @@ class DP_Admin {
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_calendar_assets' ) );
+        add_action( 'wp_ajax_dp_admin_get_bookings', array( $this, 'ajax_get_bookings' ) );
     }
 
     /**
@@ -55,6 +57,16 @@ class DP_Admin {
             array( $this, 'settings_page_html' ),
             'dashicons-clipboard',
             30
+        );
+        
+        // Add Bookings Calendar submenu
+        add_submenu_page(
+            'dominus-pickleball',
+            __( 'Bookings Calendar', 'dominus-pickleball' ),
+            __( 'Bookings Calendar', 'dominus-pickleball' ),
+            'manage_options',
+            'dominus-pickleball-calendar',
+            array( $this, 'calendar_page_html' )
         );
     }
 
@@ -569,5 +581,193 @@ class DP_Admin {
         }
         
         return $sanitized_input;
+    }
+
+    /**
+     * Enqueue assets for the Bookings Calendar page only.
+     */
+    public function enqueue_calendar_assets( $hook ) {
+        // Only load on our calendar page
+        if ( $hook !== 'pickleball_page_dominus-pickleball-calendar' ) {
+            return;
+        }
+
+        // Enqueue Flatpickr
+        wp_enqueue_style( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', array(), '4.6.9' );
+        wp_enqueue_script( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr', array(), '4.6.9', true );
+
+        // Enqueue admin calendar script
+        wp_enqueue_script(
+            'dp-admin-calendar',
+            DP_PLUGIN_URL . 'assets/js/dp-admin-calendar.js',
+            array( 'jquery', 'flatpickr' ),
+            DP_VERSION,
+            true
+        );
+
+        // Localize script data
+        $settings = get_option( 'dp_settings' );
+        $total_courts = isset( $settings['dp_number_of_courts'] ) ? absint( $settings['dp_number_of_courts'] ) : 3;
+
+        wp_localize_script( 'dp-admin-calendar', 'dpAdminCalendar', array(
+            'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+            'nonce'       => wp_create_nonce( 'dp_admin_calendar_nonce' ),
+            'today'       => date( 'Y-m-d' ),
+            'totalCourts' => $total_courts,
+        ) );
+    }
+
+    /**
+     * Render the Bookings Calendar admin page.
+     */
+    public function calendar_page_html() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html__( 'Bookings Calendar', 'dominus-pickleball' ); ?></h1>
+            <p><?php echo esc_html__( 'View booking availability and details by date.', 'dominus-pickleball' ); ?></p>
+
+            <div style="display: flex; gap: 20px; margin-top: 20px;">
+                <!-- Calendar Panel -->
+                <div style="flex: 0 0 350px;">
+                    <h2><?php echo esc_html__( 'Select Date', 'dominus-pickleball' ); ?></h2>
+                    <div id="dp-admin-calendar-inline" style="margin-bottom: 20px;"></div>
+                    
+                    <!-- Legend -->
+                    <div style="background: #fff; padding: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                        <h3 style="margin-top: 0; font-size: 14px;"><?php echo esc_html__( 'Legend', 'dominus-pickleball' ); ?></h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 20px; height: 20px; background: #27ae60; border-radius: 3px;"></span>
+                                <span><?php echo esc_html__( 'Fully Booked', 'dominus-pickleball' ); ?></span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 20px; height: 20px; background: #f1c40f; border-radius: 3px;"></span>
+                                <span><?php echo esc_html__( 'Partially Booked', 'dominus-pickleball' ); ?></span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-block; width: 20px; height: 20px; background: #ecf0f1; border: 1px solid #bdc3c7; border-radius: 3px;"></span>
+                                <span><?php echo esc_html__( 'No Bookings', 'dominus-pickleball' ); ?></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details Panel -->
+                <div style="flex: 1;">
+                    <div id="dp-booking-details">
+                        <div style="background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 4px;">
+                            <p style="color: #666; font-style: italic;">
+                                <?php echo esc_html__( 'Select a date from the calendar to view bookings.', 'dominus-pickleball' ); ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * AJAX handler for admin bookings data.
+     */
+    public function ajax_get_bookings() {
+        // Security checks
+        check_ajax_referer( 'dp_admin_calendar_nonce', 'nonce' );
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'dominus-pickleball' ) ) );
+        }
+
+        // Get the booked slots index
+        $booked_slots = get_option( DP_WooCommerce::BOOKED_SLOTS_OPTION, array() );
+
+        // Check if requesting month index or date details
+        if ( isset( $_POST['month'] ) ) {
+            // Month index request: YYYY-MM
+            $month = sanitize_text_field( $_POST['month'] );
+            
+            // Validate month format
+            if ( ! preg_match( '/^\d{4}-\d{2}$/', $month ) ) {
+                wp_send_json_error( array( 'message' => __( 'Invalid month format.', 'dominus-pickleball' ) ) );
+            }
+
+            // Build lightweight index for the month
+            $month_data = array();
+            foreach ( $booked_slots as $date => $courts ) {
+                if ( strpos( $date, $month ) === 0 ) {
+                    $month_data[ $date ] = array();
+                    foreach ( $courts as $court_name => $times ) {
+                        // Extract court ID from name (e.g., "Court 1" -> "1")
+                        $court_id = preg_replace( '/[^0-9]/', '', $court_name );
+                        if ( ! isset( $month_data[ $date ][ $court_id ] ) ) {
+                            $month_data[ $date ][ $court_id ] = array();
+                        }
+                        foreach ( $times as $time => $order_id ) {
+                            $month_data[ $date ][ $court_id ][ $time ] = $order_id;
+                        }
+                    }
+                }
+            }
+
+            wp_send_json_success( array( 'index' => $month_data ) );
+
+        } elseif ( isset( $_POST['date'] ) ) {
+            // Date details request: YYYY-MM-DD
+            $date = sanitize_text_field( $_POST['date'] );
+
+            // Validate date format
+            if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+                wp_send_json_error( array( 'message' => __( 'Invalid date format.', 'dominus-pickleball' ) ) );
+            }
+
+            $date_bookings = isset( $booked_slots[ $date ] ) ? $booked_slots[ $date ] : array();
+            $details = array();
+
+            foreach ( $date_bookings as $court_name => $times ) {
+                foreach ( $times as $time => $order_id ) {
+                    $order = wc_get_order( $order_id );
+                    $customer_name = '';
+                    $customer_email = '';
+
+                    if ( $order ) {
+                        $billing_first = $order->get_billing_first_name();
+                        $billing_last = $order->get_billing_last_name();
+                        $customer_name = trim( $billing_first . ' ' . $billing_last );
+                        if ( empty( $customer_name ) ) {
+                            $customer_name = $order->get_billing_email();
+                        }
+                        $customer_email = $order->get_billing_email();
+                    }
+
+                    $details[] = array(
+                        'court'      => $court_name,
+                        'time'       => $time,
+                        'order_id'   => $order_id,
+                        'customer'   => $customer_name,
+                        'email'      => $customer_email,
+                    );
+                }
+            }
+
+            // Sort by court, then by time
+            usort( $details, function( $a, $b ) {
+                $court_cmp = strcmp( $a['court'], $b['court'] );
+                if ( $court_cmp !== 0 ) {
+                    return $court_cmp;
+                }
+                return strcmp( $a['time'], $b['time'] );
+            } );
+
+            wp_send_json_success( array(
+                'booked'  => $date_bookings,
+                'details' => $details,
+            ) );
+
+        } else {
+            wp_send_json_error( array( 'message' => __( 'Missing required parameters.', 'dominus-pickleball' ) ) );
+        }
     }
 }
