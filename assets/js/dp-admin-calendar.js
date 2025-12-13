@@ -6,6 +6,7 @@
 
     let calendarInstance = null;
     let bookingData = {}; // Store booking data for all loaded months
+    let availabilityData = {}; // Store availability (total available slots) for each date
     let loadedMonths = {}; // Track which months have been loaded
 
     /**
@@ -114,6 +115,12 @@
                 if (response.success && response.data.index) {
                     // Merge the month data into our bookingData cache
                     Object.assign(bookingData, response.data.index);
+                    
+                    // Merge availability data (total available slots per date)
+                    if (response.data.availability) {
+                        Object.assign(availabilityData, response.data.availability);
+                    }
+                    
                     updateCalendarColors();
                 } else {
                     console.error('Failed to load month data:', response);
@@ -153,7 +160,7 @@
 
             // Check if this date has bookings in our cached data
             if (bookingData[isoDate]) {
-                const bookingStatus = getBookingStatus(bookingData[isoDate]);
+                const bookingStatus = getBookingStatus(isoDate, bookingData[isoDate]);
 
                 if (bookingStatus === 'full') {
                     dayElem.classList.add('dp-booking-full');
@@ -166,15 +173,36 @@
 
     /**
      * Determine booking status for a date.
+     * Fixed to properly check if ALL available slots are booked, not just if all courts have bookings.
+     * A date is only 'full' when total booked slots equals total available slots for that day,
+     * considering holidays, blocked times, and operating hours.
+     * 
+     * @param {string} isoDate - Date in YYYY-MM-DD format
      * @param {Object} dateData - Object with courtId => {time => orderId}
      * @returns {string} 'full', 'partial', or 'none'
      */
-    function getBookingStatus(dateData) {
-        const courtsWithBookings = Object.keys(dateData).length;
+    function getBookingStatus(isoDate, dateData) {
+        // Count total booked slots for this date
+        let totalBookedSlots = 0;
+        for (const courtId in dateData) {
+            if (dateData.hasOwnProperty(courtId)) {
+                // Count the number of booked time slots for this court
+                totalBookedSlots += Object.keys(dateData[courtId]).length;
+            }
+        }
 
-        if (courtsWithBookings >= dpAdminCalendar.totalCourts) {
+        // Get total available slots for this date from availability data
+        const totalAvailableSlots = availabilityData[isoDate] || 0;
+
+        // If no slots are available (e.g., full-day holiday), don't mark as full
+        if (totalAvailableSlots === 0) {
+            return 'none';
+        }
+
+        // A date is fully booked only when all available slots are booked
+        if (totalBookedSlots >= totalAvailableSlots) {
             return 'full';
-        } else if (courtsWithBookings > 0) {
+        } else if (totalBookedSlots > 0) {
             return 'partial';
         }
 
@@ -210,8 +238,10 @@
 
     /**
      * Display date details in the details panel.
+     * Only updates the #dp-booking-details panel to preserve the calendar and legend.
      */
     function displayDateDetails(dateStr, data) {
+        // Target only the booking details panel - never the calendar or legend
         const detailsPanel = $('#dp-booking-details');
         const details = data.details || [];
 
