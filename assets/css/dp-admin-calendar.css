@@ -1,0 +1,42 @@
+/**
+ * Admin Bookings Calendar styling.
+ */
+
+/* Booking status colors for calendar days */
+.flatpickr-day.dp-booking-full {
+    background: #27ae60 !important; /* Green for fully booked */
+    color: #fff !important;
+}
+
+.flatpickr-day.dp-booking-partial {
+    background: #f1c40f !important; /* Yellow for partially booked */
+    color: #333 !important;
+}
+
+/* Ensure status colors persist when day is selected */
+.flatpickr-day.dp-booking-full.selected,
+.flatpickr-day.dp-booking-full.selected:hover {
+    background: #27ae60 !important; /* Keep green when selected */
+    color: #fff !important;
+    border-color: #1e8449 !important; /* Darker green border for selected state */
+    box-shadow: 0 0 0 2px rgba(30, 132, 73, 0.3) !important; /* Add subtle glow for selection */
+}
+
+.flatpickr-day.dp-booking-partial.selected,
+.flatpickr-day.dp-booking-partial.selected:hover {
+    background: #f1c40f !important; /* Keep yellow when selected */
+    color: #333 !important;
+    border-color: #d4a017 !important; /* Darker yellow border for selected state */
+    box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.3) !important; /* Add subtle glow for selection */
+}
+
+/* Ensure hover states maintain booking colors for non-selected days */
+.flatpickr-day.dp-booking-full:hover {
+    background: #229954 !important; /* Slightly darker green on hover */
+    color: #fff !important;
+}
+
+.flatpickr-day.dp-booking-partial:hover {
+    background: #f4d03f !important; /* Slightly lighter yellow on hover */
+    color: #333 !important;
+}

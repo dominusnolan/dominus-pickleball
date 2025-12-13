@@ -5,7 +5,8 @@
     'use strict';
 
     let calendarInstance = null;
-    let currentMonthData = {};
+    let bookingData = {}; // Store booking data for all loaded months
+    let loadedMonths = {}; // Track which months have been loaded
 
     /**
      * Initialize the admin calendar.
@@ -25,17 +26,10 @@
                 }
             },
             onMonthChange: function(selectedDates, dateStr, instance) {
-                const year = instance.currentYear;
-                const month = String(instance.currentMonth + 1).padStart(2, '0');
-                const monthStr = year + '-' + month;
-                loadMonthIndex(monthStr);
+                loadVisibleMonths(instance);
             },
             onReady: function(selectedDates, dateStr, instance) {
-                // Load initial month
-                const year = instance.currentYear;
-                const month = String(instance.currentMonth + 1).padStart(2, '0');
-                const monthStr = year + '-' + month;
-                loadMonthIndex(monthStr);
+                loadVisibleMonths(instance);
             },
             onDayCreate: function(dObj, dStr, fp, dayElem) {
                 // This will be called for each day element
@@ -45,9 +39,69 @@
     }
 
     /**
+     * Load data for all visible months (current, previous, and next).
+     */
+    function loadVisibleMonths(instance) {
+        const year = instance.currentYear;
+        const month = instance.currentMonth; // 0-indexed
+        
+        // Calculate previous and next months
+        const currentMonthStr = year + '-' + String(month + 1).padStart(2, '0');
+        
+        const prevMonthDate = new Date(year, month - 1, 1);
+        const prevMonthStr = prevMonthDate.getFullYear() + '-' + String(prevMonthDate.getMonth() + 1).padStart(2, '0');
+        
+        const nextMonthDate = new Date(year, month + 1, 1);
+        const nextMonthStr = nextMonthDate.getFullYear() + '-' + String(nextMonthDate.getMonth() + 1).padStart(2, '0');
+        
+        // Only load months that haven't been loaded yet
+        if (!loadedMonths[prevMonthStr]) {
+            loadMonthIndex(prevMonthStr);
+        }
+        if (!loadedMonths[currentMonthStr]) {
+            loadMonthIndex(currentMonthStr);
+        }
+        if (!loadedMonths[nextMonthStr]) {
+            loadMonthIndex(nextMonthStr);
+        }
+        
+        // Clean up old cached months (keep only last 6 months of data)
+        cleanupOldCache(currentMonthStr);
+    }
+
+    /**
+     * Clean up old cached months to prevent memory leaks.
+     * Keeps only the last 6 months of data.
+     */
+    function cleanupOldCache(currentMonthStr) {
+        const currentDate = new Date(currentMonthStr + '-01');
+        const sixMonthsAgo = new Date(currentDate);
+        sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
+        
+        // Remove data for dates older than 6 months
+        Object.keys(bookingData).forEach(function(dateStr) {
+            const dateObj = new Date(dateStr);
+            if (dateObj < sixMonthsAgo) {
+                delete bookingData[dateStr];
+            }
+        });
+        
+        // Remove tracking for old months
+        Object.keys(loadedMonths).forEach(function(monthStr) {
+            const monthDate = new Date(monthStr + '-01');
+            if (monthDate < sixMonthsAgo) {
+                delete loadedMonths[monthStr];
+            }
+        });
+    }
+
+    /**
      * Load month index data via AJAX.
      */
     function loadMonthIndex(monthStr) {
+        // Mark this month as being loaded
+        loadedMonths[monthStr] = true;
+        
         $.ajax({
             url: dpAdminCalendar.ajaxUrl,
             type: 'POST',
@@ -58,7 +112,8 @@
             },
             success: function(response) {
                 if (response.success && response.data.index) {
-                    currentMonthData = response.data.index;
+                    // Merge the month data into our bookingData cache
+                    Object.assign(bookingData, response.data.index);
                     updateCalendarColors();
                 } else {
                     console.error('Failed to load month data:', response);
@@ -66,6 +121,8 @@
             },
             error: function(xhr, status, error) {
                 console.error('AJAX error loading month data:', error);
+                // Remove from loaded months on error so it can be retried
+                delete loadedMonths[monthStr];
             }
         });
     }
@@ -91,20 +148,17 @@
             const day = String(date.getDate()).padStart(2, '0');
             const isoDate = year + '-' + month + '-' + day;
 
-            // Reset custom colors
-            dayElem.style.background = '';
-            dayElem.style.color = '';
+            // Remove any existing booking status classes
+            dayElem.classList.remove('dp-booking-full', 'dp-booking-partial');
 
-            // Check if this date has bookings
-            if (currentMonthData[isoDate]) {
-                const bookingStatus = getBookingStatus(currentMonthData[isoDate]);
+            // Check if this date has bookings in our cached data
+            if (bookingData[isoDate]) {
+                const bookingStatus = getBookingStatus(bookingData[isoDate]);
 
                 if (bookingStatus === 'full') {
-                    dayElem.style.background = '#27ae60'; // Green
-                    dayElem.style.color = '#fff';
+                    dayElem.classList.add('dp-booking-full');
                 } else if (bookingStatus === 'partial') {
-                    dayElem.style.background = '#f1c40f'; // Yellow
-                    dayElem.style.color = '#333';
+                    dayElem.classList.add('dp-booking-partial');
                 }
             }
         });

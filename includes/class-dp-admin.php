@@ -596,6 +596,14 @@ class DP_Admin {
         wp_enqueue_style( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css', array(), '4.6.9' );
         wp_enqueue_script( 'flatpickr', 'https://cdn.jsdelivr.net/npm/flatpickr', array(), '4.6.9', true );
 
+        // Enqueue admin calendar CSS
+        wp_enqueue_style(
+            'dp-admin-calendar',
+            DP_PLUGIN_URL . 'assets/css/dp-admin-calendar.css',
+            array( 'flatpickr' ),
+            DP_VERSION
+        );
+
         // Enqueue admin calendar script
         wp_enqueue_script(
             'dp-admin-calendar',
