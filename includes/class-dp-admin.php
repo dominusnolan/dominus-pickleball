@@ -707,10 +707,21 @@ class DP_Admin {
         // Parse hours from time strings (handles both "7:00" and "07:00" formats)
         $start_parts = explode( ':', $start_time );
         $end_parts = explode( ':', $end_time );
+        
+        if ( count( $start_parts ) < 2 || count( $end_parts ) < 2 ) {
+            // Invalid time format, return 0 available slots
+            return 0;
+        }
+        
         $start_hour = intval( $start_parts[0] );
         $end_hour = intval( $end_parts[0] );
         // Note: This plugin uses 60-minute slot intervals, so we calculate in whole hours
         $total_hours = $end_hour - $start_hour;
+        
+        if ( $total_hours <= 0 ) {
+            // Invalid operating hours, return 0 available slots
+            return 0;
+        }
 
         // Get day of week for this date
         $timestamp = strtotime( $date );
