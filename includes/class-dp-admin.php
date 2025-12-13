@@ -704,8 +704,12 @@ class DP_Admin {
         }
 
         // Calculate total hours of operation
-        $start_hour = intval( substr( $start_time, 0, 2 ) );
-        $end_hour = intval( substr( $end_time, 0, 2 ) );
+        // Parse hours from time strings (handles both "7:00" and "07:00" formats)
+        $start_parts = explode( ':', $start_time );
+        $end_parts = explode( ':', $end_time );
+        $start_hour = intval( $start_parts[0] );
+        $end_hour = intval( $end_parts[0] );
+        // Note: This plugin uses 60-minute slot intervals, so we calculate in whole hours
         $total_hours = $end_hour - $start_hour;
 
         // Get day of week for this date
@@ -770,9 +774,16 @@ class DP_Admin {
         $start = trim( $parts[0] );
         $end = trim( $parts[1] );
 
-        // Parse hours
-        $start_hour = intval( substr( $start, 0, 2 ) );
-        $end_hour = intval( substr( $end, 0, 2 ) );
+        // Parse hours from time strings (handles both "7:00" and "07:00" formats)
+        $start_parts = explode( ':', $start );
+        $end_parts = explode( ':', $end );
+        
+        if ( count( $start_parts ) < 2 || count( $end_parts ) < 2 ) {
+            return 0;
+        }
+        
+        $start_hour = intval( $start_parts[0] );
+        $end_hour = intval( $end_parts[0] );
 
         return max( 0, $end_hour - $start_hour );
     }
