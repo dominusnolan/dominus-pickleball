@@ -35,6 +35,19 @@ class DP_WooCommerce {
         add_action( 'wp_ajax_nopriv_dp_add_slot_to_cart', array( $this, 'ajax_add_slot_to_cart_nopriv' ) );
         add_action( 'wp_ajax_dp_remove_slot_from_cart', array( $this, 'ajax_remove_slot_from_cart' ) );
         add_action( 'wp_ajax_nopriv_dp_remove_slot_from_cart', array( $this, 'ajax_remove_slot_from_cart_nopriv' ) );
+
+
+        // Also remove bookings if an order is trashed or deleted
+        add_action( 'wp_trash_post', function( $post_id ) {
+            if ( get_post_type( $post_id ) === 'shop_order' ) {
+                $this->remove_booking_slots( $post_id );
+            }
+        });
+        add_action( 'before_delete_post', function( $post_id ) {
+            if ( get_post_type( $post_id ) === 'shop_order' ) {
+                $this->remove_booking_slots( $post_id );
+            }
+        });
     }
 
     /**
