@@ -612,7 +612,7 @@ class DP_Admin {
         wp_localize_script( 'dp-admin-calendar', 'dpAdminCalendar', array(
             'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
             'nonce'       => wp_create_nonce( 'dp_admin_calendar_nonce' ),
-            'today'       => date( 'Y-m-d' ),
+            'today'       => current_time( 'Y-m-d' ),
             'totalCourts' => $total_courts,
         ) );
     }
