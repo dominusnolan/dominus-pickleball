@@ -643,8 +643,8 @@ class DP_Admin {
                     <h2><?php echo esc_html__( 'Select Date', 'dominus-pickleball' ); ?></h2>
                     <div id="dp-admin-calendar-inline" style="margin-bottom: 20px;"></div>
                     
-                    <!-- Legend -->
-                    <div style="background: #fff; padding: 15px; border: 1px solid #ccc; border-radius: 4px;">
+                    <!-- Legend - should always remain visible and never be replaced by JavaScript -->
+                    <div id="dp-calendar-legend" style="background: #fff; padding: 15px; border: 1px solid #ccc; border-radius: 4px;">
                         <h3 style="margin-top: 0; font-size: 14px;"><?php echo esc_html__( 'Legend', 'dominus-pickleball' ); ?></h3>
                         <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -679,6 +679,127 @@ class DP_Admin {
     }
 
     /**
+     * Calculate the number of available slots for a specific date.
+     * Considers holidays, blocked times, and operating hours.
+     *
+     * @param string $date Date in YYYY-MM-DD format.
+     * @return int Number of available slots (court * time combinations).
+     */
+    private function calculate_available_slots( $date ) {
+        $settings = get_option( 'dp_settings' );
+        $num_courts = isset( $settings['dp_number_of_courts'] ) ? absint( $settings['dp_number_of_courts'] ) : 3;
+        $start_time = isset( $settings['dp_start_time'] ) ? $settings['dp_start_time'] : '07:00';
+        $end_time = isset( $settings['dp_end_time'] ) ? $settings['dp_end_time'] : '23:00';
+
+        // Check if date is a full-day holiday
+        $full_day_holidays = isset( $settings['dp_full_day_holidays'] ) ? $settings['dp_full_day_holidays'] : '';
+        if ( ! empty( $full_day_holidays ) ) {
+            $holiday_lines = explode( "\n", $full_day_holidays );
+            foreach ( $holiday_lines as $holiday ) {
+                if ( trim( $holiday ) === $date ) {
+                    // Full-day holiday: no slots available
+                    return 0;
+                }
+            }
+        }
+
+        // Calculate total hours of operation
+        // Parse hours from time strings (handles both "7:00" and "07:00" formats)
+        $start_parts = explode( ':', $start_time );
+        $end_parts = explode( ':', $end_time );
+        
+        if ( count( $start_parts ) < 2 || count( $end_parts ) < 2 ) {
+            // Invalid time format, return 0 available slots
+            return 0;
+        }
+        
+        $start_hour = intval( $start_parts[0] );
+        $end_hour = intval( $end_parts[0] );
+        // Note: This plugin uses 60-minute slot intervals, so we calculate in whole hours
+        $total_hours = $end_hour - $start_hour;
+        
+        if ( $total_hours <= 0 ) {
+            // Invalid operating hours, return 0 available slots
+            return 0;
+        }
+
+        // Get day of week for this date
+        $timestamp = strtotime( $date );
+        $day_of_week = strtolower( date( 'l', $timestamp ) );
+
+        // Calculate available slots per court considering blocked times
+        $slots_per_court = array();
+        for ( $court = 1; $court <= $num_courts; $court++ ) {
+            $available_hours = $total_hours;
+
+            // Check court-specific blocked time
+            $court_blocked_key = 'dp_blocked_times_court_' . $court . '_' . $day_of_week;
+            if ( ! empty( $settings[ $court_blocked_key ] ) ) {
+                $blocked_range = $settings[ $court_blocked_key ];
+                $available_hours -= $this->calculate_blocked_hours( $blocked_range );
+            } elseif ( ! empty( $settings[ 'dp_blocked_times_' . $day_of_week ] ) ) {
+                // Fallback to general blocked time for all courts
+                $blocked_range = $settings[ 'dp_blocked_times_' . $day_of_week ];
+                $available_hours -= $this->calculate_blocked_hours( $blocked_range );
+            }
+
+            // Check partial-day holidays for this specific date
+            $partial_holidays = isset( $settings['dp_partial_day_holidays'] ) ? $settings['dp_partial_day_holidays'] : '';
+            if ( ! empty( $partial_holidays ) ) {
+                $holiday_lines = explode( "\n", $partial_holidays );
+                foreach ( $holiday_lines as $line ) {
+                    $line = trim( $line );
+                    // Format: YYYY-MM-DD HH:MM-HH:MM
+                    if ( preg_match( '/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})-(\d{2}:\d{2})$/', $line, $matches ) ) {
+                        if ( $matches[1] === $date ) {
+                            $holiday_range = $matches[2] . '-' . $matches[3];
+                            $available_hours -= $this->calculate_blocked_hours( $holiday_range );
+                        }
+                    }
+                }
+            }
+
+            $slots_per_court[ $court ] = max( 0, $available_hours );
+        }
+
+        // Total available slots = sum of available hours for all courts
+        return array_sum( $slots_per_court );
+    }
+
+    /**
+     * Calculate blocked hours from a time range string.
+     *
+     * @param string $range Time range in format "HH:MM-HH:MM".
+     * @return int Number of hours blocked.
+     */
+    private function calculate_blocked_hours( $range ) {
+        if ( empty( $range ) || strpos( $range, '-' ) === false ) {
+            return 0;
+        }
+
+        $parts = explode( '-', $range, 2 );
+        if ( count( $parts ) !== 2 ) {
+            return 0;
+        }
+
+        $start = trim( $parts[0] );
+        $end = trim( $parts[1] );
+
+        // Parse hours from time strings (handles both "7:00" and "07:00" formats)
+        $start_parts = explode( ':', $start );
+        $end_parts = explode( ':', $end );
+        
+        if ( count( $start_parts ) < 2 || count( $end_parts ) < 2 ) {
+            return 0;
+        }
+        
+        $start_hour = intval( $start_parts[0] );
+        $end_hour = intval( $end_parts[0] );
+
+        return max( 0, $end_hour - $start_hour );
+    }
+
+    /**
      * AJAX handler for admin bookings data.
      */
     public function ajax_get_bookings() {
@@ -702,8 +823,10 @@ class DP_Admin {
                 wp_send_json_error( array( 'message' => __( 'Invalid month format.', 'dominus-pickleball' ) ) );
             }
 
-            // Build lightweight index for the month
+            // Build lightweight index for the month including availability data
             $month_data = array();
+            $availability_data = array();
+            
             foreach ( $booked_slots as $date => $courts ) {
                 if ( strpos( $date, $month ) === 0 ) {
                     $month_data[ $date ] = array();
@@ -717,10 +840,28 @@ class DP_Admin {
                             $month_data[ $date ][ $court_id ][ $time ] = $order_id;
                         }
                     }
+                    
+                    // Calculate available slots for this date considering holidays and blocked times
+                    $availability_data[ $date ] = $this->calculate_available_slots( $date );
                 }
             }
 
-            wp_send_json_success( array( 'index' => $month_data ) );
+            // Also calculate availability for dates without bookings in the month
+            $year = intval( substr( $month, 0, 4 ) );
+            $month_num = intval( substr( $month, 5, 2 ) );
+            $days_in_month = cal_days_in_month( CAL_GREGORIAN, $month_num, $year );
+            
+            for ( $day = 1; $day <= $days_in_month; $day++ ) {
+                $date = sprintf( '%04d-%02d-%02d', $year, $month_num, $day );
+                if ( ! isset( $availability_data[ $date ] ) ) {
+                    $availability_data[ $date ] = $this->calculate_available_slots( $date );
+                }
+            }
+
+            wp_send_json_success( array( 
+                'index' => $month_data,
+                'availability' => $availability_data
+            ) );
 
         } elseif ( isset( $_POST['date'] ) ) {
             // Date details request: YYYY-MM-DD

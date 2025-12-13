@@ -2,6 +2,12 @@
  * Admin Bookings Calendar styling.
  */
 
+/* Ensure legend is always visible and never accidentally hidden */
+#dp-calendar-legend {
+    display: block !important;
+    visibility: visible !important;
+}
+
 /* Booking status colors for calendar days */
 .flatpickr-day.dp-booking-full {
     background: #27ae60 !important; /* Green for fully booked */
